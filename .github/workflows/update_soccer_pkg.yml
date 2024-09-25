@@ -1,4 +1,4 @@
-name: Trigger main repo update
+name: Trigger soccer_pkg dependencies update
 
 on:
   push:
@@ -11,9 +11,6 @@ jobs:
     
     permissions:
       contents: write
-    
-    # env:
-    #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Trigger update workflow in main repository
@@ -21,9 +18,7 @@ jobs:
           # Set the required variables
           repo_owner=Blenders-FC
           repo_name=blenders_soccer_pkg
-          event_type="update_subtrees" 
-          service="update"
-          version="1"
+          event_type="update_subtrees"
   
           curl -L \
             -X POST \
@@ -31,5 +26,4 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.PAT }}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             https://api.github.com/repos/$repo_owner/$repo_name/dispatches \
-            -d "{\"event_type\": \"$event_type\"}" 
-        #, \"client_payload\": {\"service\": \"$service\", \"version\": \"$version\", \"unit\": false, \"integration\": true}}"
+            -d "{\"event_type\": \"$event_type\"}"
