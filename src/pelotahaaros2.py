@@ -120,8 +120,20 @@ if __name__ == "__main__":
 
     rospy.loginfo("Hello ROS")
 
-    subimg = rospy.Subscriber("/usb_cam_node/image_raw", Image, imageCallback)
+    #subimg = rospy.Subscriber("/usb_cam_node/image_raw", Image, imageCallback)
     subangle_head = rospy.Subscriber(f'robotis_{robot_id}/present_joint_states', JointState, angleCallback)
 
     rospy.spin()
+
+    cap = cv2.VideoCapture(0)
+
+    while True:
+        ret, frame = cap.read()
+        img, center = ball_detect(frame)
+        old_center.x = center.x
+        old_center.y = center.y
+
+        final_img = bridge.cv2_to_imgmsg(img, "rgb8")
+        pub_img.publish(final_img)
+
 
