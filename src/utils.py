@@ -1,13 +1,9 @@
-import sys
 import os
 import time
 import math
 import numpy as np
 import cv2 as cv
 from collections import deque
-import itertools
-import struct  # get_image_size
-import imghdr  # get_image_size
 
 
 def sigmoid(x):
@@ -21,10 +17,6 @@ def softmax(x):
 
 
 def bbox_iou(box1, box2, x1y1x2y2=True):
-    
-    # print('iou box1:', box1)
-    # print('iou box2:', box2)
-
     if x1y1x2y2:
         mx = min(box1[0], box2[0])
         Mx = max(box1[2], box2[2])
@@ -60,7 +52,6 @@ def bbox_iou(box1, box2, x1y1x2y2=True):
 
 
 def nms_cpu(boxes, confs, nms_thresh=0.5, min_mode=False):
-    # print(boxes.shape)
     x1 = boxes[:, 0]
     y1 = boxes[:, 1]
     x2 = boxes[:, 2]
@@ -138,7 +129,6 @@ def plot_boxes_cv2(img, boxes, savename=None, class_names=None, color=None):
             c1, c2 = (x1,y1), (x2, y2)
             c3 = (c1[0] + t_size[0], c1[1] - t_size[1] - 3)
             cv2.rectangle(img, (x1,y1), (int(np.float32(c3[0])), int(np.float32(c3[1]))), rgb, -1)
-            # cv2.rectangle(img, (int(0.52928805),0.49913132), (np.float32(c3[0]), np.float32(c3[1])), rgb, -1)
             img = cv2.putText(img, msg, (c1[0], int(np.float32(c1[1] - 2))), cv2.FONT_HERSHEY_SIMPLEX,0.7, (0,0,0), bbox_thick//2,lineType=cv2.LINE_AA)
         
         img = cv2.rectangle(img, (x1, y1), (x2, y2), rgb, bbox_thick)
@@ -180,7 +170,6 @@ def plot_boxes_cv2_video(img, boxes, class_names=None, color=None):
         if len(box) >= 7 and class_names:
             cls_conf = box[5]
             cls_id = box[6]
-            # print('%s: %f' % (class_names[cls_id], cls_conf))
             classes = len(class_names)
             offset = cls_id * 123457 % classes
             red = get_color(2, offset, classes)
@@ -193,7 +182,6 @@ def plot_boxes_cv2_video(img, boxes, class_names=None, color=None):
             c1, c2 = (x1,y1), (x2, y2)
             c3 = (c1[0] + t_size[0], c1[1] - t_size[1] - 3)
             cv2.rectangle(img, (x1,y1), (int(np.float32(c3[0])), int(np.float32(c3[1]))), rgb, -1)
-            # cv2.rectangle(img, (int(0.52928805),0.49913132), (np.float32(c3[0]), np.float32(c3[1])), rgb, -1)
             img = cv2.putText(img, msg, (c1[0], int(np.float32(c1[1] - 2))), cv2.FONT_HERSHEY_SIMPLEX,0.7, (0,0,0), bbox_thick//2,lineType=cv2.LINE_AA)
         
         img = cv2.rectangle(img, (x1, y1), (x2, y2), rgb, bbox_thick)
@@ -224,17 +212,9 @@ def load_class_names(namesfile):
 
 def post_processing(img, conf_thresh, nms_thresh, output):
 
-    # anchors = [12, 16, 19, 36, 40, 28, 36, 75, 76, 55, 72, 146, 142, 110, 192, 243, 459, 401]
-    # num_anchors = 9
-    # anchor_masks = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
-    # strides = [8, 16, 32]
-    # anchor_step = len(anchors) // num_anchors
-
     goal_thresh = 0.5
 
-    # [batch, num, 1, 4]
     box_array = output[0]
-    # [batch, num, num_classes]
     confs = output[1]
 
     t1 = time.time()
@@ -245,10 +225,8 @@ def post_processing(img, conf_thresh, nms_thresh, output):
 
     num_classes = confs.shape[2]
 
-    # [batch, num, 4]
     box_array = box_array[:, :, 0]
 
-    # [batch, num, num_classes] --> [batch, num]
     max_conf = np.max(confs, axis=2)
     max_id = np.argmax(confs, axis=2)
 
@@ -261,26 +239,7 @@ def post_processing(img, conf_thresh, nms_thresh, output):
         l_box_array = box_array[i, argwhere, :]
         l_max_conf = max_conf[i, argwhere]
         l_max_id = max_id[i, argwhere]
-
-        bboxes = []
-        # nms for each class
-        # # # # for j in range(num_classes):
-        # # # #     cls_argwhere = l_max_id == j
-        # # # #     ll_box_array = l_box_array[cls_argwhere, :]
-        # # # #     ll_max_conf = l_max_conf[cls_argwhere]
-        # # # #     ll_max_id = l_max_id[cls_argwhere]
-
-        # # # #     keep = nms_cpu(ll_box_array, ll_max_conf, nms_thresh)
-            
-        # # # #     if (keep.size > 0):
-        # # # #         ll_box_array = ll_box_array[keep, :]
-        # # # #         ll_max_conf = ll_max_conf[keep]
-        # # # #         ll_max_id = ll_max_id[keep]
-
-        # # # #         for k in range(ll_box_array.shape[0]):
-        # # # #             bboxes.append([ll_box_array[k, 0], ll_box_array[k, 1], ll_box_array[k, 2], ll_box_array[k, 3], ll_max_conf[k], ll_max_conf[k], ll_max_id[k]])
-        
-        
+        bboxes = []      
         cls_argwhere = l_max_id == 2
         ll_box_array = l_box_array[cls_argwhere, :]
         ll_max_conf = l_max_conf[cls_argwhere]
@@ -302,12 +261,6 @@ def post_processing(img, conf_thresh, nms_thresh, output):
         bboxes_batch.append(bboxes)
 
     t3 = time.time()
-
-    # print('-----------------------------------')
-    # print('       max and argmax : %f' % (t2 - t1))
-    # print('                  nms : %f' % (t3 - t2))
-    # print('Post processing total : %f' % (t3 - t1))
-    # print('-----------------------------------')
     
     return bboxes_batch
     

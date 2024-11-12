@@ -24,7 +24,6 @@ def detect(session, image_src, namesfile):
     img_in = np.transpose(img_in, (2, 0, 1)).astype(np.float32)
     img_in = np.expand_dims(img_in, axis=0)
     img_in /= 255.0
-    # print("Shape of the network input: ", img_in.shape)
 
     # Compute   
     output_layer_boxes = session.output("boxes")
