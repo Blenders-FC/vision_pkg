@@ -282,4 +282,4 @@ class CvFpsCalc(object):
 		fps_rounded = round(fps, 2)
 		
 		return fps_rounded
-    
+ 
