@@ -107,3 +107,4 @@ if __name__ == "__main__":
     subimg = rospy.Subscriber("/usb_cam_node/image_raw", Image, imageCallback)
 
     rospy.spin()
+
