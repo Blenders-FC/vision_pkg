@@ -12,6 +12,7 @@ from std_msgs.msg import Float64
 
 get_distance = lambda p1, p2: math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2)
 
+
 def angleCallback(angle_msg):
     global half_boolean
     angle = angle_msg.position[1]
