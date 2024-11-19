@@ -118,8 +118,6 @@ if __name__ == "__main__":
     pub_center = rospy.Publisher(f'robotis_{robot_id}/ball_center', Point, queue_size=1)
     pub_slope = rospy.Publisher(f'robotis_{robot_id}/Slope', Float64, queue_size=1)
 
-    rospy.loginfo("Hello ROS")
-
     subimg = rospy.Subscriber("/usb_cam_node/image_raw", Image, imageCallback)
     subangle_head = rospy.Subscriber(f'robotis_{robot_id}/present_joint_states', JointState, angleCallback)
 
