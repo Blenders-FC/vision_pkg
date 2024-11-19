@@ -96,6 +96,7 @@ def _predict(value):
     tp = kalman.predict()
     return int(tp[0]), int(tp[1])
 
+
 if __name__ == "__main__":
     bridge = CvBridge()
     slope = Float64()
