@@ -129,12 +129,16 @@ while True:
     
     # Display the combined frame
     #cv2.imshow('Combined Video', overlay_image)
+
     """
     Filter of the lines mask
     """
+    kernel3 = kernel = np.ones((5, 5), np.uint8)
     colored_mask_blur = cv2.GaussianBlur(colored_mask, (9, 9), 0)
-    colored_mask_filt = cv2.Laplacian(colored_mask_blur, ddepth=cv2.CV_16S, ksize=9)
+    colored_mask_filt = cv2.Laplacian(colored_mask_blur, ddepth=cv2.CV_16S, ksize=11)
     colored_mask_filt = cv2.convertScaleAbs(colored_mask_filt)
+    colored_mask_filt = cv2.erode(colored_mask_filt, kernel=kernel3, iterations=2)
+    colored_mask_filt = cv2.dilate(colored_mask_filt, kernel=kernel3, iterations=3)
     #colored_mask_filt = colored_mask_blur # Line for easier debugging
 
     """
@@ -142,41 +146,12 @@ while True:
     """
     gray_crn = cv2.cvtColor(colored_mask_filt,cv2.COLOR_BGR2GRAY)
     gray_crn = np.float32(gray_crn)
-    dst = cv2.cornerHarris(gray_crn,2,3,0.04)
+    dst = cv2.cornerHarris(gray_crn,2,3,0.06)
     #result is dilated for marking the corners, not important
     dst = cv2.dilate(dst,None)
-    colored_mask_filt[dst>0.9*dst.max()]=[0,0,255] # number between dst and .max is the threshold for the corners considered
-    """
-    # Filtering corners
-    mask = np.zeros_like(gray_crn)
-    mask[dst>0.01*dst.max()] = 255
-    # storing coordinate positions of all points in a list
-    coordinates = np.argwhere(mask)
-    coor_list = coordinates.tolist()
-    
-    # points beyond this threshold are preserved
-    thresh = 20
+    colored_mask_filt[dst>0.95*dst.max()]=[0,0,255] # number between dst and .max is the threshold for the corners considered
 
-    coor_list_2 = coor_list.copy()
 
-    # iterate for every 2 points
-    i = 1    
-    for pt1 in coor_list:
-        for pt2 in coor_list[i::1]:
-            if(distance(pt1, pt2) < thresh):
-                # to avoid removing a point if already removed
-                try:
-                    coor_list_2.remove(pt2)      
-                except:
-                    pass
-        i+=1
-
-    # draw final corners
-    img2 = colored_mask.copy()
-    for pt in coor_list_2:
-        img2 = cv2.circle(img2, tuple(reversed(pt)), 3, (0, 0, 255), -1)
-
-    #img[dst>0.01*dst.max()]=[0,0,255]#"""
     cv2.imshow('dst',colored_mask_filt)
 
     
