@@ -4,6 +4,7 @@ import math
 import numpy as np
 import cv2 as cv
 from collections import deque
+from pathlib import Path
 
 
 def sigmoid(x):
@@ -140,6 +141,7 @@ def plot_boxes_cv2(img, boxes, savename=None, class_names=None, color=None):
         cv2.imwrite(savename, img)
     return img
 
+
 def plot_boxes_cv2_video(img, boxes, class_names=None, color=None):
     import cv2
     img = np.copy(img)
@@ -263,6 +265,19 @@ def post_processing(img, conf_thresh, nms_thresh, output):
     t3 = time.time()
     
     return bboxes_batch
+
+
+def find_file(parent_folder, filename):
+    current_dir = Path(__file__).resolve().parent
+    soccer_pkg_dir = current_dir.parent
+
+    dir_path = soccer_pkg_dir / parent_folder
+    file_path = dir_path / filename
+
+    if file_path.exists():
+        return file_path
+    else:
+        return None
     
     
 class CvFpsCalc(object):

@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<launch>    
+
+  <param name="robot_id"                 value="1"/>
+
+  <!-- Camera Node -->
+  <node pkg="usb_cam" type="usb_cam" name="usb_cam" output="screen">
+  </node>
+
+  <!-- Vision Node -->
+  <node pkg="vision_pkg" type="main_vision_node.py" name="main_vision_node" output="screen">
+     <param name="robot_id"              value="1"/>
+  </node>
+
+</launch>

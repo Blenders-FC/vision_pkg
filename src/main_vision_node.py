@@ -2,15 +2,16 @@
 
 import cv2
 import numpy as np
-from utils import *
-from openvino.runtime import Core
 import rospy
 import math
+from yolo_utils import *
+from openvino.runtime import Core
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import JointState
 from cv_bridge import CvBridge, CvBridgeError
 from geometry_msgs.msg import Point
 from std_msgs.msg import Float64
+
 
 def detect(session, image_src, namesfile):
     global center
@@ -54,12 +55,13 @@ def detect(session, image_src, namesfile):
 
     return final_img, center
 
+
 def compileModel():
     # Function for compiling model with OpenVino
     global compiled_model
 
     ie = Core()
-    model = ie.read_model(model="/home/robotis/blenders_ws/src/soccer_pkg/src/yolov4soccer.onnx")
+    model = ie.read_model(model=find_file(parent_folder="models", filename="yolov4soccer.onnx"))
     compiled_model = ie.compile_model(model=model, device_name="MYRIAD")
 
 
@@ -74,7 +76,7 @@ def imageCallback(img_msg):
     
     # Process image with model and publish
     
-    namesfile = '/home/robotis/blenders_ws/src/soccer_pkg/src/_classes.txt'
+    namesfile = find_file(parent_folder="models", filename="_classes.txt")
     
     img, center = detect(session=compiled_model, image_src=frame, namesfile=namesfile)
     final_img = bridge.cv2_to_imgmsg(img, "rgb8")
@@ -93,9 +95,7 @@ if __name__ == "__main__":
 
     compileModel()
 
-    
-
-    rospy.init_node('yolo_vision')
+    rospy.init_node('vision_node')
     robot_id = rospy.get_param('robot_id', 1)
 
 
@@ -107,4 +107,3 @@ if __name__ == "__main__":
     subimg = rospy.Subscriber("/usb_cam_node/image_raw", Image, imageCallback)
 
     rospy.spin()
-

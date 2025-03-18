@@ -21,8 +21,22 @@ def calculate_fps(prev_frame_time, new_frame_time, frame, position=(7, 70), font
     cv2.putText(frame, fps_text, position, font, font_scale, color, thickness, cv2.LINE_AA)
     return prev_frame_time
 
+# Function to calculate lines angles
+def calculate_angles(lines):
+    try:
+        for line in lines:
+            x1, y1, x2, y2 = line[0]
+            # Calculate the angle of the line
+            angle = np.arctan2(y2 - y1, x2 - x1) * 180 / np.pi  # Convert to degrees
+            print(f"Line angle: {angle} degrees")
+    except TypeError:
+        pass
+
+
+
 # Open the video file
-video_path = Path(__file__).parent.parent / "media" / "video1.mp4"  # Get path relative to script location
+video_path = Path(__file__).resolve().parent.parent / "media" / "video1.mp4"  # Get path relative to script location
+print(video_path)
 cap = cv2.VideoCapture(str(video_path))
 
 # Check if the video opened successfully
@@ -38,12 +52,18 @@ kernel2 = np.ones((5, 5), np.uint8)
 # used to record the time when we processed last frame 
 prev_frame_time = 0
 
-# Pre-calculate zones to exclude from drawing lines
-def calculate_nozone(shape, offset=50):
-    y, x = shape[:2]
-    y_nozone = list(range(y - offset, y + 1)) + list(range(0, offset + 1))
-    x_nozone = list(range(x - offset, x + 1)) + list(range(0, offset + 1))
-    return y_nozone, x_nozone
+# Calculate zones for the current frame
+ret, orig_frame = cap.read()
+
+# Define the region of interest (ROI)
+image_height, image_width = orig_frame.shape[:2]
+roi_height = int(image_height * 0.5)  # Crop the top 50% of the image
+roi_width = int(image_width * 0.8)    # Crop the middle 80% of the image
+x_offset = int(image_width * 0.1)     # Offset to focus on the center
+y_offset = int(image_height * 0.25)  # Vertical offset
+
+orig_frame = orig_frame[y_offset:y_offset+roi_height, x_offset:x_offset+roi_width]
+yimg_nozone, ximg_nozone = calculate_nozone(orig_frame.shape)
 
 # Loop to read frames
 while True:
@@ -52,11 +72,11 @@ while True:
     if not ret:
         break
 
+    # Crop the image
+    orig_frame = orig_frame[y_offset:y_offset+roi_height, x_offset:x_offset+roi_width]
+
     # Start measuring time for each frame
     new_frame_time = time.time()
-    
-    # Calculate zones for the current frame
-    yimg_nozone, ximg_nozone = calculate_nozone(orig_frame.shape)
     
     # Blur and convert to grayscale
     blurred = cv2.GaussianBlur(orig_frame, (9, 9), 0)
@@ -85,6 +105,7 @@ while True:
     
     # Find contours of the field markings
     contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    contours = sorted(contours, key=cv2.contourArea, reverse=True)[:10]  # Keep top 10 largest contours
 
     # Draw only large contours
     dummy_mask = np.zeros_like(mask_green)
@@ -95,20 +116,27 @@ while True:
     #adap_thrs_morph = cv2.morphologyEx(dummy_mask, cv2.MORPH_CLOSE, kernel2, iterations=1)
     
     # Detect lines using Hough transform
-    lines = cv2.HoughLinesP(dummy_mask, rho=2, theta=np.pi / 180, threshold=250,
-                            minLineLength=25, maxLineGap=50)
+    lines = cv2.HoughLinesP(dummy_mask, rho=10, theta=np.pi / 180, threshold=250,
+                            minLineLength=10, maxLineGap=50)  # minLineLength=25
+    
+    filtered_lines = []
+    if lines is not None:
+        for line in lines:
+            x1, y1, x2, y2 = line[0]
+            if (y1 not in yimg_nozone or y2 not in yimg_nozone) and (x1 not in ximg_nozone or x2 not in ximg_nozone):
+                filtered_lines.append(line)
+
+    calculate_angles(filtered_lines)
     
     # Create a copy to draw lines on
     image_lines_thrs = orig_frame.copy()
     lines_thrs = np.zeros_like(dummy_mask)
     
     # Draw detected lines while avoiding no-line zones
-    if lines is not None:
-        for line in lines:
-            x1, y1, x2, y2 = line[0]
-            if (y1 not in yimg_nozone or y2 not in yimg_nozone) and (x1 not in ximg_nozone or x2 not in ximg_nozone):
-                cv2.line(image_lines_thrs, (x1, y1), (x2, y2), (255, 0, 0), 10)  # Blue lines
-                cv2.line(lines_thrs, (x1, y1), (x2, y2), (255, 0, 0), 10)
+    for line in filtered_lines:
+        x1, y1, x2, y2 = line[0]
+        cv2.line(image_lines_thrs, (x1, y1), (x2, y2), (255, 0, 0), 1)  # Blue lines
+        cv2.line(lines_thrs, (x1, y1), (x2, y2), (255, 0, 0), 10)
     
     # Mask lines with white areas
     lines_thrs = cv2.bitwise_and(lines_thrs, white_msk)
@@ -125,6 +153,7 @@ while True:
     
     # Display the combined frame
     cv2.imshow('Combined Video', overlay_image)
+    # cv2.imshow("Region of Interest", roi)
     
     # Break loop if 'q' is pressed
     if cv2.waitKey(30) & 0xFF == ord('q'):
