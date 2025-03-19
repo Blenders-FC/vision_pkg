@@ -35,15 +35,15 @@ def detect(session, image_src, namesfile):
     
     boxes = post_processing(img=img_in, conf_thresh=0.8, nms_thresh=0.6, output=outputs)
 
-    print(boxes)
+    # print(boxes)
 
     if len(boxes) > 0 and len(boxes[0]) > 0 and len(boxes[0][0]) > 0:
-        print(boxes[0])
+        # print(boxes[0])
         # Update center coordinates
         center.x = int(boxes[0][0][7] * IN_IMAGE_W)
         center.y = int(boxes[0][0][8] * IN_IMAGE_H)
         center.z = int((boxes[0][0][2]*IN_IMAGE_W - boxes[0][0][0]*IN_IMAGE_W ) * (boxes[0][0][3]*IN_IMAGE_H- boxes[0][0][1]*IN_IMAGE_H))
-        print(center)
+        # print(center)
         pub_center.publish(center)
     else:
         center.x = 999
@@ -62,12 +62,12 @@ def compileModel():
 
     ie = Core()
     model = ie.read_model(model=find_file(parent_folder="models", filename="yolov4soccer.onnx"))
-    compiled_model = ie.compile_model(model=model, device_name="MYRIAD")
+    compiled_model = ie.compile_model(model=model, device_name="CPU")  # "MYRIAD")
 
 
 def imageCallback(img_msg):
     global center, compiled_model
-    print("Llega image callback")
+    # print("Llega image callback")
     try:
         frame = bridge.imgmsg_to_cv2(img_msg, "passthrough")
     except CvBridgeError as e:
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     pub_img = rospy.Publisher(f'/robotis_{robot_id}/ImgFinal', Image, queue_size=1)
     pub_center = rospy.Publisher(f'/robotis_{robot_id}/ball_center', Point, queue_size=1)
 
-    rospy.loginfo("Hello ROS")
+    rospy.loginfo("Vision node initialized")
 
     subimg = rospy.Subscriber("/usb_cam_node/image_raw", Image, imageCallback)
 
