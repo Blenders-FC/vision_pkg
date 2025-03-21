@@ -36,7 +36,6 @@ def calculate_angles(lines):
 
 # Open the video file
 video_path = Path(__file__).resolve().parent.parent / "media" / "video1.mp4"  # Get path relative to script location
-print(video_path)
 cap = cv2.VideoCapture(str(video_path))
 
 # Check if the video opened successfully
