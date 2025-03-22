@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<launch>    
+
+  <!-- Define robot_id with a default value (used if not inherited) -->
+  <arg name="robot_id" default="1"/>
+  <param name="robot_id" value="$(arg robot_id)"/>
+
+  <!-- Camera Node -->
+  <node pkg="usb_cam" type="usb_cam_node" name="usb_cam_node" output="screen"/>
+
+  <!-- Vision Node -->
+  <node pkg="vision_pkg" type="main_vision_node.py" name="main_vision_node" output="screen"/>
+
+</launch>
