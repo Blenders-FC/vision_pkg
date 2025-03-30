@@ -28,7 +28,7 @@ def distance(pt1, pt2):
     return dist
 
 # Open the video file
-cap = cv2.VideoCapture(r"C:\Users\ricbe\Documents\CODES\opcv-Tests\videolineas.mp4")
+cap = cv2.VideoCapture(r"test_assets\videolineas.mp4")
 # Check if the video opened successfully
 if not cap.isOpened():
     print("Error: Could not open the video.")
@@ -144,16 +144,59 @@ while True:
     """
     Corner detection
     """
+    corner_qual = 0.95
+
     gray_crn = cv2.cvtColor(colored_mask_filt,cv2.COLOR_BGR2GRAY)
     gray_crn = np.float32(gray_crn)
     dst = cv2.cornerHarris(gray_crn,2,3,0.06)
+
     #result is dilated for marking the corners, not important
     dst = cv2.dilate(dst,None)
-    colored_mask_filt[dst>0.95*dst.max()]=[0,0,255] # number between dst and .max is the threshold for the corners considered
-
-
+    colored_mask_cop = colored_mask_filt.copy()
+    colored_mask_filt[dst>corner_qual*dst.max()]=[0,0,255] # number between dst and .max is the threshold for the corners considered
     cv2.imshow('dst',colored_mask_filt)
 
+    # store coordinates of corner
+    mask_cor = np.zeros_like(gray_crn)
+    mask_cor[dst>corner_qual*dst.max()] = 255
+    # storing coordinate positions of all points in a list
+    coordinates = np.argwhere(mask_cor)
+    coor_list = coordinates.tolist()
+
+    # points beyond this threshold are preserved
+    thresh_cor = 50
+
+    coor_list_2 = coor_list.copy()
+
+    # iterate for every 2 points
+
+    i = 1
+    for pt1 in coor_list:
+        for pt2 in coor_list[i::1]:
+            if((distance(pt1, pt2) < thresh_cor)):
+                # to avoid removing a point if already removed
+                try:
+                    coor_list_2.remove(pt2)
+                except:
+                    pass
+        i+=1
+
+    coor_list_3 = coor_list_2.copy()
+    for i in coor_list_2:
+        if (pt1[0] > (colored_mask_cop.shape[0]*0.9) or (pt1[0] < colored_mask_cop.shape[0]*0.1)) or (pt1[1] > (colored_mask_cop.shape[1]*0.9) or (pt1[1] < (colored_mask_cop.shape[1]*0.1))):
+            try:
+                coor_list_3.remove(i)
+            except:
+                pass
+
+
+
+    #draw final corners
+    img2 = colored_mask_cop.copy()
+    for pt in coor_list_3:
+        img2 = cv2.circle(img2, tuple(reversed(pt)), 7, (0, 0, 2550, -1))
+    
+    cv2.imshow('dst', img2)
     
     # Break loop if 'q' is pressed
     if cv2.waitKey(30) & 0xFF == ord('q'):
