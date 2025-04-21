@@ -9,6 +9,8 @@
   <node pkg="usb_cam" type="usb_cam_node" name="usb_cam_node" output="screen"/>
 
   <!-- Vision Node -->
-  <node pkg="vision_pkg" type="main_vision_node.py" name="main_vision_node" output="screen"/>
+  <node pkg="vision_pkg" type="main_vision_node.py" name="main_vision_node" output="screen">
+    <param name="robot_id"               value="1"/>
+  </node>
 
 </launch>
