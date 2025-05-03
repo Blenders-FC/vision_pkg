@@ -43,8 +43,8 @@ def ball_detect(frame):
     # Make a writable copy of the frame
     frame_writable = frame.copy()
 
-    pelota_clas = cv2.CascadeClassifier('/home/robotis/blenders_ws/src/soccer_pkg/data/cascade_manual.xml')
-    half_clas = cv2.CascadeClassifier('/home/robotis/blenders_ws/src/soccer_pkg/data/half_cascade.xml')
+    pelota_clas = cv2.CascadeClassifier('/home/robotis/catkin_ws/src/vision_pkg/models/cascade_manual.xml')
+    half_clas = cv2.CascadeClassifier('/home/robotis/catkin_ws/src/vision_pkg/models/half_cascade.xml')
 
     gray = cv2.cvtColor(frame_writable, cv2.COLOR_BGR2GRAY)
 
@@ -115,7 +115,7 @@ if __name__ == "__main__":
     kalman.processNoiseCov = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]], np.float32) * 0.03
 
     rospy.init_node('image')
-    robot_id = rospy.get_param('robot_id', 0)
+    robot_id = rospy.get_param('robot_id', 1)
     pub_img = rospy.Publisher(f'robotis_{robot_id}/ImgFinal', Image, queue_size=1)
     pub_center = rospy.Publisher(f'robotis_{robot_id}/ball_center', Point, queue_size=1)
     pub_slope = rospy.Publisher(f'robotis_{robot_id}/Slope', Float64, queue_size=1)
