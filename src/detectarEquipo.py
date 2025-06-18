@@ -31,7 +31,7 @@ def deteccionEquipo(msg):
         return
 
     hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
-    mask = cv.inRange(hsv, Rmask[0], Rmask[1])  # puedes cambiar a Amask para azul
+    mask = cv.inRange(hsv, Amask[0], Amask[1])  # puedes cambiar a Amask para azul
     mask_clean = cv.morphologyEx(mask, cv.MORPH_OPEN, kernel)
     mask_vis = cv.bitwise_and(frame, frame, mask=mask_clean)
 
