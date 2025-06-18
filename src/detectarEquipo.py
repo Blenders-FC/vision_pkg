@@ -13,7 +13,7 @@ lower_red2 = np.array([170, 100, 100], np.uint8)
 upper_red2 = np.array([180, 255, 255], np.uint8) 
 Red_lower = (lower_red1, lower_red2)
 Red_upper = (upper_red1, upper_red2)
-Rmask = [Red_lower, Red_upper]
+Rmask = (Red_lower, Red_upper)
 
 azulHigh = np.array([150, 220, 255], np.uint8)
 azulLow = np.array([90, 0, 120], np.uint8)
