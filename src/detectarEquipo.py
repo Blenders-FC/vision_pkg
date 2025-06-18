@@ -7,7 +7,7 @@ import cv2 as cv
 import numpy as np
 
 # Definimos las máscaras de color
-lower_red1 = np.array([0, 100, 50], np.unit8) 
+lower_red1 = np.array([0, 100, 150], np.unit8) 
 upper_red1 = np.array([10, 255, 255], np.unit8) 
 lower_red2 = np.array([170, 100, 100], np.unit8) 
 upper_red2 = np.array([180, 255, 255], np.unit8) 
