@@ -46,7 +46,7 @@ def deteccionEquipo(msg):
     combined_mask = cv.bitwise_or(mask_red, mask_blue)
     combined_vis = cv.addWeighted(mask_red_vis, 1.0, mask_blue_vis, 1.0, 0)
     
-    contours, _ = cv.findContours(mask_clean, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv.findContours(combined_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
     rects = []
     centers = []
