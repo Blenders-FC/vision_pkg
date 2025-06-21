@@ -15,8 +15,8 @@ lower_red2 = np.array([170, 100, 100], np.uint8)
 upper_red2 = np.array([180, 255, 255], np.uint8) 
 
 # Para azul
-azul_low = np.array([90, 0, 120], np.uint8)
-azul_high = np.array([150, 220, 255], np.uint8)
+azul_low = np.array([100, 100, 100], np.uint8)
+azul_high = np.array([140, 255, 255], np.uint8)
 
 kernel = np.ones((5, 5), np.uint8)
 bridge = CvBridge()
