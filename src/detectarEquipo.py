@@ -6,18 +6,17 @@ from cv_bridge import CvBridge
 import cv2 as cv
 import numpy as np
 
-# Definimos las máscaras de color
-lower_red1 = np.array([0, 100, 150], np.uint8) 
+
+# Definimos las máscaras de color correctamente
+# Para rojo (dos rangos porque el rojo está en ambos extremos del espacio HSV)
+lower_red1 = np.array([0, 100, 100], np.uint8) 
 upper_red1 = np.array([10, 255, 255], np.uint8) 
 lower_red2 = np.array([170, 100, 100], np.uint8) 
 upper_red2 = np.array([180, 255, 255], np.uint8) 
-Red_lower = (lower_red1, lower_red2)
-Red_upper = (upper_red1, upper_red2)
-Rmask = [Red_lower, Red_upper]
 
-azulHigh = np.array([100, 100, 100], np.uint8)
-azulLow = np.array([140, 255, 255], np.uint8)
-Amask = [azulLow, azulHigh]
+# Para azul
+azul_low = np.array([90, 0, 120], np.uint8)
+azul_high = np.array([150, 220, 255], np.uint8)
 
 kernel = np.ones((5, 5), np.uint8)
 bridge = CvBridge()
@@ -31,11 +30,24 @@ def deteccionEquipo(msg):
         return
 
     hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
-    mask = cv.inRange(hsv, Rmask[0], Rmask[1])  # puedes cambiar a Amask para azul
-    mask_clean = cv.morphologyEx(mask, cv.MORPH_OPEN, kernel)
-    mask_vis = cv.bitwise_and(frame, frame, mask=mask_clean)
-
-    contours, _ = cv.findContours(mask_clean, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+    
+    # Procesamiento para color rojo (combinando ambos rangos)
+    mask_red1 = cv.inRange(hsv, lower_red1, upper_red1)
+    mask_red2 = cv.inRange(hsv, lower_red2, upper_red2)
+    mask_red = cv.bitwise_or(mask_red1, mask_red2)
+    mask_red_clean = cv.morphologyEx(mask_red, cv.MORPH_OPEN, kernel)
+    mask_red_vis = cv.bitwise_and(frame, frame, mask=mask_red_clean)
+    
+    # Procesamiento para color azul
+    mask_blue = cv.inRange(hsv, azul_low, azul_high)
+    mask_blue_clean = cv.morphologyEx(mask_blue, cv.MORPH_OPEN, kernel)
+    mask_blue_vis = cv.bitwise_and(frame, frame, mask=mask_blue_clean)
+    
+    # Combinar ambas máscaras para visualización
+    combined_mask = cv.bitwise_or(mask_red, mask_blue)
+    combined_vis = cv.addWeighted(mask_red_vis, 1.0, mask_blue_vis, 1.0, 0)
+    
+    contours, _ = cv.findContours(combined_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
     rects = []
     centers = []
@@ -77,9 +89,12 @@ def deteccionEquipo(msg):
         cv.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 255, 255), 3)
         cv.circle(frame, ((x_min + x_max) // 2, (y_min + y_max) // 2), 5, (255, 0, 0), -1)
 
+    # Mostrar todas las visualizaciones
     cv.imshow("Original", frame)
-    cv.imshow("Mask", mask)
-    cv.imshow("Mask Visualizada", mask_vis)
+    cv.imshow("Máscara Roja", mask_red_clean)
+    cv.imshow("Máscara Azul", mask_blue_clean)
+    cv.imshow("Máscara Combinada", combined_mask)
+    cv.imshow("Visualización Combinada", combined_vis)
 
     if cv.waitKey(1) == 27:  # ESC para salir
         rospy.signal_shutdown("Usuario cerró la ventana")
