@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
-
 import rospy
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 import cv2 as cv
 import numpy as np
 
-
-# Definimos las máscaras de color correctamente
 # Para rojo (dos rangos porque el rojo está en ambos extremos del espacio HSV)
 lower_red1 = np.array([0, 100, 100], np.uint8) 
 upper_red1 = np.array([10, 255, 255], np.uint8) 
@@ -21,7 +18,9 @@ azul_high = np.array([140, 255, 255], np.uint8)
 kernel = np.ones((5, 5), np.uint8)
 bridge = CvBridge()
 
-def deteccionEquipo(msg):
+#------------------------------------------------------------ para recibir la imagen
+def image_callback(msg):
+    global frame
     try:
         # Convertir imagen ROS a OpenCV
         frame = bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
@@ -29,26 +28,35 @@ def deteccionEquipo(msg):
         rospy.logerr(f"Error al convertir la imagen: {e}")
         return
 
-    hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
+#------------------------------------------------------------ para detectar rojo y azul
+def deteccionEquipo(subsection):
+    global obstacle, mask_red_clean, mask_blue_clean, mask_red
+
+    hsv = cv.cvtColor(subsection, cv.COLOR_BGR2HSV)
     
     # Procesamiento para color rojo (combinando ambos rangos)
     mask_red1 = cv.inRange(hsv, lower_red1, upper_red1)
     mask_red2 = cv.inRange(hsv, lower_red2, upper_red2)
     mask_red = cv.bitwise_or(mask_red1, mask_red2)
     mask_red_clean = cv.morphologyEx(mask_red, cv.MORPH_OPEN, kernel)
-    mask_red_vis = cv.bitwise_and(frame, frame, mask=mask_red_clean)
     
     # Procesamiento para color azul
     mask_blue = cv.inRange(hsv, azul_low, azul_high)
     mask_blue_clean = cv.morphologyEx(mask_blue, cv.MORPH_OPEN, kernel)
-    mask_blue_vis = cv.bitwise_and(frame, frame, mask=mask_blue_clean)
     
+    obstacle = np.any(mask_red_clean) or np.any(mask_blue_clean)
+    return obstacle
+
+#------------------------------------------------------------ para mostrar las máscaras detectadas
+def display_imagenes():
+    mask_red_vis = cv.bitwise_and(frame, frame, mask=mask_red_clean)
+    mask_blue_vis = cv.bitwise_and(frame, frame, mask=mask_blue_clean)
+    combined_vis = cv.addWeighted(mask_red_vis, 1.0, mask_blue_vis, 1.0, 0)
     # Combinar ambas máscaras para visualización
     combined_mask = cv.bitwise_or(mask_red, mask_blue)
-    combined_vis = cv.addWeighted(mask_red_vis, 1.0, mask_blue_vis, 1.0, 0)
+    
     
     contours, _ = cv.findContours(combined_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-
     rects = []
     centers = []
 
@@ -99,10 +107,54 @@ def deteccionEquipo(msg):
     if cv.waitKey(1) == 27:  # ESC para salir
         rospy.signal_shutdown("Usuario cerró la ventana")
 
+#------------------------------------------------------------ para la navegación
+def navigation ():
+    global frame 
+
+    #hay que agregar una verificación por si no hay frame 
+
+    height, width = frame.shape[:2] #regresa un arreglo de altura y ancho de imágen
+    lower_half = frame [height // 2:, :] #para buscar sólo en la parte de abajo de la imagen, es decir por donde podría avanzar el robot, usando slicing
+    
+    xi, xf = 0, width
+    yi, yf = 0, lower_half.shape[0]
+    sections = 0
+    max_sections = 12 #va a buscar en 12 zonas worst case scenario 
+    
+    while sections < max_sections:  #loop para que siga dividiendo y analizando frames hasta llegar a 12 (para que se pueda rendir vaya...) 
+        half_x = (xf - xi) / 2 #la mitad del ancho de la imagen
+        left_section = lower_half[yi:yf, xi:int(half_x)]
+        left_obstacle = deteccionEquipo(left_section)
+
+        if not left_obstacle:
+            print(f"vía libre en la sección [{xi}, {half_x}]")
+            #Aquí hay que llamar al nodo de movimiento de ROS
+
+        right_section = lower_half[yi:yf, int(half_x):xf]
+        right_obstacle = deteccionEquipo(right_section)
+
+        if not righ_obstacle:
+            print (f"Vía libre en la sección [{half_x}, {xf}]")
+            #Aquí tmb llamar al nodo de movimiento de ROS
+        
+        #si hay obstaculos en ambas secciones, analizamos una sección más pequeña
+        xf = half_x
+        sections += 1
+        print("analizando nueva sub zona")
+
+    print("Tras 12 secciones, no se pudo encontrar vía libre!!")
+
+    
+
 def main():
     rospy.init_node('deteccion_equipo_node', anonymous=True)
-    rospy.Subscriber('/usb_cam/image_raw', Image, deteccionEquipo)
+    rospy.Subscriber('/usb_cam/image_raw', Image, image_callback)
     rospy.loginfo("Nodo iniciado y escuchando imágenes...")
+    rate = rospy.Rate(20) #hay que ver que rate conviene
+    while not rospy.is_shutdown():
+        display_imagenes()
+        navigation()
+        rate.sleep()
     rospy.spin()
     cv.destroyAllWindows()
 
