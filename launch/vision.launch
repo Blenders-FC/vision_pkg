@@ -3,11 +3,14 @@
 
   <!-- Define robot_id with a default value (used if not inherited) -->
   <arg name="robot_id" default="1"/>
+  <arg name="robot_ns" default="robotis_$(arg robot_id)"/>
   <param name="robot_id" value="$(arg robot_id)"/>
 
   <!-- Camera Node -->
+  <group ns="$(arg robot_ns)">
   <node pkg="usb_cam" type="usb_cam_node" name="usb_cam_node" output="screen"/>
-
+  </group>
+	  
   <!-- Vision Node -->
   <node pkg="vision_pkg" type="main_vision_node.py" name="main_vision_node" output="screen">
     <param name="robot_id"               value="1"/>
