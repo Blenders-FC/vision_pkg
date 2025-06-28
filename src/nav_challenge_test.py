@@ -31,11 +31,11 @@ def navigation(frame):
     height, width = frame.shape[:2]
 
     # Usar solo el primer tercio horizontal y la mitad inferior
-    lower_half = frame[height // 2:, :width // 3]
+    lower_half = frame[height // 2:, :width]
     xi, xf = 0, lower_half.shape[1]
     yi, yf = 0, lower_half.shape[0]
 
-    max_sections = 6
+    max_sections = 20
     sections = 2
 
     print("🔍 Iniciando navegación en zona inferior izquierda")
@@ -66,13 +66,17 @@ def procesar_frame(frame):
 
     # Solo para mostrar el frame original y región analizada
     height, width = frame.shape[:2]
-    rect_region = frame[height // 2:, :width // 3]
+    rect_region = frame[height // 2:, :width]
     cv.imshow("Zona de análisis (1er tercio inferior)", rect_region)
     cv.imshow("Frame completo", frame)
 
 def main():
     # Imagen fija:
-    frame = cv.imread("C:/Users/Ivani/humanoides/vision_pkg-teams_detection/vision_pkg-teams_detection/media/2.jpg")
+    #frame = cv.imread("C:/Users/Ivani/humanoides/vision_pkg/media/1.jpg")
+    #frame = cv.imread("C:/Users/Ivani/humanoides/vision_pkg/media/2.jpg")
+    #frame = cv.imread("C:/Users/Ivani/humanoides/vision_pkg/media/3.jpg")
+    frame = cv.imread("C:/Users/Ivani/humanoides/vision_pkg/media/4.jpg")
+
     if frame is None:
          print("Imagen no encontrada")
          return
