@@ -1,19 +1,35 @@
 from ultralytics import YOLO
-
-# Load a YOLO11n PyTorch model
-#model = YOLO("yolo11n.pt")
-
-#results = model("bus.jpg")
-
-
-# Export the model to TensorRT
-#model.export(format="engine", half=True)  # dla:0 or dla:1 corresponds to the DLA cores
+import cv2
 
 # Load the exported TensorRT model
 trt_model = YOLO("yolo11n.engine")
 
-# Run inference
-results = trt_model("bus.jpg")
+# Open the video capture (0 is usually the default camera)
+cap = cv2.VideoCapture(0)
 
+if not cap.isOpened():
+    print("Error: Could not open camera.")
+    exit()
 
-results[0].save(filename="bus_detected.jpg")
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        print("Error: Failed to capture frame.")
+        break
+
+    # Run inference on the frame
+    results = trt_model(frame)
+
+    # Visualize results on the frame
+    annotated_frame = results[0].plot()
+
+    # Show the annotated frame
+    cv2.imshow('YOLOv11 TensorRT Detection', annotated_frame)
+
+    # Break on 'q' key
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# Release resources
+cap.release()
+cv2.destroyAllWindows()
