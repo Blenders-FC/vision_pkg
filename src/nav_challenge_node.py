@@ -149,7 +149,7 @@ def navigation ():
 def main():
     rospy.init_node('deteccion_equipo_node', anonymous=True)
     rospy.Subscriber('/usb_cam/image_raw', Image, image_callback)
-    rospy.loginfo("Nodo iniciado y escuchando imágenes...")
+    rospy.loginfo("Nodo iniciado...")
     rate = rospy.Rate(20) #hay que ver que rate conviene
     while not rospy.is_shutdown():
         display_imagenes()
