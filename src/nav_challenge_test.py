@@ -36,9 +36,9 @@ def navigation(frame):
     yi, yf = 0, lower_half.shape[0]
 
     max_sections = 20
-    sections = 2
+    sections = 3
 
-    print("🔍 Iniciando navegación en zona inferior izquierda")
+    print("Iniciando navegación en zona inferior izquierda")
 
     while sections <= max_sections:
         div_x = (xf - xi) // sections
@@ -63,11 +63,7 @@ def navigation(frame):
 # --- Procesar y visualizar ---
 def procesar_frame(frame):
     navigation(frame)
-
-    # Solo para mostrar el frame original y región analizada
-    height, width = frame.shape[:2]
-    rect_region = frame[height // 2:, :width]
-    cv.imshow("Zona de análisis (1er tercio inferior)", rect_region)
+    # Solo para mostrar el frame original 
     cv.imshow("Frame completo", frame)
 
 def main():
@@ -75,30 +71,30 @@ def main():
     #frame = cv.imread("C:/Users/Ivani/humanoides/vision_pkg/media/1.jpg")
     #frame = cv.imread("C:/Users/Ivani/humanoides/vision_pkg/media/2.jpg")
     #frame = cv.imread("C:/Users/Ivani/humanoides/vision_pkg/media/3.jpg")
-    frame = cv.imread("C:/Users/Ivani/humanoides/vision_pkg/media/4.jpg")
+    #frame = cv.imread("C:/Users/Ivani/humanoides/vision_pkg/media/4.jpg")
 
-    if frame is None:
-         print("Imagen no encontrada")
-         return
-    procesar_frame(frame)
-    cv.waitKey(0)
+    #if frame is None:
+    #     print("Imagen no encontrada")
+    #     return
+    #procesar_frame(frame)
+    #cv.waitKey(0)
 
     # O usar cámara:
-    #cap = cv.VideoCapture(0)
+    cap = cv.VideoCapture("C:/Users/Ivani/humanoides/vision_pkg/media/video2.mp4")
 
-    #while True:
-    #    ret, frame = cap.read()
-    #    if not ret or frame is None:
-    #        print("Error al leer la cámara")
-    #        continue
+    while True:
+        ret, frame = cap.read()
+        if not ret or frame is None:
+            print("Error al leer la cámara")
+            break
 
-    #    procesar_frame(frame)
+        procesar_frame(frame)
 
-    #    if cv.waitKey(1) == 27:  # ESC
-    #        break
+        if cv.waitKey(1) == 27:  # ESC
+            break
 
-    #cap.release()
-    #cv.destroyAllWindows()
+    cap.release()
+    cv.destroyAllWindows()
 
 if __name__ == '__main__':
     main()
