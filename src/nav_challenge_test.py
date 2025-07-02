@@ -29,8 +29,6 @@ def deteccionEquipo(subsection):
 # --- Función para navegación recursiva ---
 def navigation(frame):
     height, width = frame.shape[:2]
-
-    # Usar solo el primer tercio horizontal y la mitad inferior
     lower_half = frame[height // 2:, :width]
     xi, xf = 0, lower_half.shape[1]
     yi, yf = 0, lower_half.shape[0]
@@ -38,27 +36,38 @@ def navigation(frame):
     max_sections = 20
     sections = 3
 
-    print("Iniciando navegación en zona inferior izquierda")
+    print("Iniciando navegación en zona inferior")
 
     while sections <= max_sections:
         div_x = (xf - xi) // sections
 
-        for i in range(sections):
-            start = xi + i * div_x
-            end = xi + (i + 1) * div_x if (i + 1) * div_x < xf else xf
-
+        # Buscar primero desde el centro hacia la derecha
+        for offset in range(sections // 2, sections):
+            start = offset * div_x
+            end = min((offset + 1) * div_x, xf)
             section = lower_half[yi:yf, start:end]
-            obstacle = deteccionEquipo(section)
 
-            if not obstacle:
-                print(f"Vía libre en la subzona [{start}, {end}] de {sections} divisiones")
+            if not deteccionEquipo(section):
+                print(f"Vía libre en subzona [{start}, {end}] ({sections} divisiones)")
                 cv.rectangle(lower_half, (start, 0), (end, yf), (0, 255, 0), 2)
                 return
 
-        print(f"Obstáculos en las {sections} subzonas, refinando...")
-        sections += 1
+        # Luego desde el centro hacia la izquierda
+        for offset in reversed(range(0, sections // 2)):
+            start = offset * div_x
+            end = min((offset + 1) * div_x, xf)
+            section = lower_half[yi:yf, start:end]
+
+            if not deteccionEquipo(section):
+                print(f"Vía libre en subzona [{start}, {end}] ({sections} divisiones)")
+                cv.rectangle(lower_half, (start, 0), (end, yf), (0, 255, 0), 2)
+                return
+
+        print(f"Obstáculos en {sections} zonas, refinando...")
+        sections += 2
 
     print("No se encontró vía libre tras múltiples divisiones")
+
 
 # --- Procesar y visualizar ---
 def procesar_frame(frame):
