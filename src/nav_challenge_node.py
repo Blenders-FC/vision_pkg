@@ -5,13 +5,6 @@ from cv_bridge import CvBridge
 import cv2 as cv
 import numpy as np
 
-#variables globales
-frame = None
-mask_red_clean = None
-mask_blue_clean = None
-mask_red = None
-obstacle = False
-
 # Para rojo (dos rangos porque el rojo está en ambos extremos del espacio HSV)
 lower_red1 = np.array([0, 100, 100], np.uint8) 
 upper_red1 = np.array([10, 255, 255], np.uint8) 
@@ -37,8 +30,6 @@ def image_callback(msg):
 
 #------------------------------------------------------------ para detectar rojo y azul
 def deteccionEquipo(subsection):
-    global obstacle, mask_red_clean, mask_blue_clean, mask_red, mask_blue
-
     hsv = cv.cvtColor(subsection, cv.COLOR_BGR2HSV)
     
     # Procesamiento para color rojo (combinando ambos rangos)
@@ -52,11 +43,11 @@ def deteccionEquipo(subsection):
     mask_blue_clean = cv.morphologyEx(mask_blue, cv.MORPH_OPEN, kernel)
     
     obstacle = np.any(mask_red_clean) or np.any(mask_blue_clean)
-    return obstacle
+    return obstacle, mask_red_clean, mask_blue_clean, mask_red, mask_blue
 
 #------------------------------------------------------------ para mostrar las máscaras detectadas
 def display_imagenes():
-    x,y,h,w =0
+    _, mask_red_clean, mask_blue_clean, mask_red, mask_blue=deteccionEquipo(frame)
     mask_red_vis = cv.bitwise_and(frame, frame, mask=mask_red_clean)
     mask_blue_vis = cv.bitwise_and(frame, frame, mask=mask_blue_clean)
     combined_vis = cv.addWeighted(mask_red_vis, 1.0, mask_blue_vis, 1.0, 0)
