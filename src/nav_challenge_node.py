@@ -5,6 +5,13 @@ from cv_bridge import CvBridge
 import cv2 as cv
 import numpy as np
 
+#variables globales
+frame = None
+mask_red_clean = None
+mask_blue_clean = None
+mask_red = None
+obstacle = False
+
 # Para rojo (dos rangos porque el rojo está en ambos extremos del espacio HSV)
 lower_red1 = np.array([0, 100, 100], np.uint8) 
 upper_red1 = np.array([10, 255, 255], np.uint8) 
@@ -124,20 +131,22 @@ def navigation ():
     
     while sections < max_sections:  #loop para que siga dividiendo y analizando frames hasta llegar a 12 (para que se pueda rendir vaya...) 
         half_x = (xf - xi) // 2 #la mitad del ancho de la imagen
-        left_section = lower_half[yi:yf, xi:int(half_x)]
+        
+        left_section = lower_half[yi:yf, xi:xi + half_x]
         left_obstacle = deteccionEquipo(left_section)
 
         if not left_obstacle:
             print(f"vía libre en la sección [{xi}, {xi + half_x}]")
             #Aquí hay que llamar al nodo de movimiento de ROS
-
+            return
         right_section = lower_half[yi:yf, int(half_x):xf]
         right_obstacle = deteccionEquipo(right_section)
 
         if not right_obstacle:
             print (f"Vía libre en la sección [{xi + half_x}, {xf}]")
             #Aquí tmb llamar al nodo de movimiento de ROS
-        
+            return
+            
         #si hay obstaculos en ambas secciones, analizamos una sección más pequeña
         xf = xi + half_x
         sections += 1
