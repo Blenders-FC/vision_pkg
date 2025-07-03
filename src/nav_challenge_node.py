@@ -5,13 +5,6 @@ from cv_bridge import CvBridge
 import cv2 as cv
 import numpy as np
 
-#variables globales
-frame = None
-mask_red_clean = None
-mask_blue_clean = None
-mask_red = None
-obstacle = False
-
 # Para rojo (dos rangos porque el rojo está en ambos extremos del espacio HSV)
 lower_red1 = np.array([0, 100, 100], np.uint8) 
 upper_red1 = np.array([10, 255, 255], np.uint8) 
@@ -37,8 +30,6 @@ def image_callback(msg):
 
 #------------------------------------------------------------ para detectar rojo y azul
 def deteccionEquipo(subsection):
-    global obstacle, mask_red_clean, mask_blue_clean, mask_red
-
     hsv = cv.cvtColor(subsection, cv.COLOR_BGR2HSV)
     
     # Procesamiento para color rojo (combinando ambos rangos)
@@ -52,10 +43,11 @@ def deteccionEquipo(subsection):
     mask_blue_clean = cv.morphologyEx(mask_blue, cv.MORPH_OPEN, kernel)
     
     obstacle = np.any(mask_red_clean) or np.any(mask_blue_clean)
-    return obstacle
+    return obstacle, mask_red_clean, mask_blue_clean, mask_red, mask_blue
 
 #------------------------------------------------------------ para mostrar las máscaras detectadas
 def display_imagenes():
+    _, mask_red_clean, mask_blue_clean, mask_red, mask_blue=deteccionEquipo(frame)
     mask_red_vis = cv.bitwise_and(frame, frame, mask=mask_red_clean)
     mask_blue_vis = cv.bitwise_and(frame, frame, mask=mask_blue_clean)
     combined_vis = cv.addWeighted(mask_red_vis, 1.0, mask_blue_vis, 1.0, 0)
@@ -118,41 +110,52 @@ def display_imagenes():
 def navigation ():
     global frame 
 
+    #hay que agregar una verificación por si no hay frame 
     if frame is None:
-        return 
+        rospy.logwarn("Esperando frame...")
+        return
 
-    height, width = frame.shape[:2] #regresa un arreglo de altura y ancho de imágen
-    lower_half = frame [height // 2:, :] #para buscar sólo en la parte de abajo de la imagen, es decir por donde podría avanzar el robot, usando slicing
-    
-    xi, xf = 0, width
+    height, width = frame.shape[:2]
+    lower_half = frame[height // 2:, :width]
+    xi, xf = 0, lower_half.shape[1]
     yi, yf = 0, lower_half.shape[0]
-    sections = 0
-    max_sections = 12 #va a buscar en 12 zonas worst case scenario 
+
+    max_sections = 20
+    sections = 3
+
+    print("Iniciando navegación en zona inferior")
+
+    while sections <= max_sections:
+        div_x = (xf - xi) // sections
+
+        # Buscar primero desde el centro hacia la derecha
+        for offset in range(sections // 2, sections):
+            start = offset * div_x
+            end = min((offset + 1) * div_x, xf)
+            section = lower_half[yi:yf, start:end]
+
+            if not deteccionEquipo(section):
+                print(f"Vía libre en subzona [{start}, {end}] ({sections} divisiones)")
+                cv.rectangle(lower_half, (start, 0), (end, yf), (0, 255, 0), 2)
+                return
+
+        # Luego desde el centro hacia la izquierda
+        for offset in reversed(range(0, sections // 2)):
+            start = offset * div_x
+            end = min((offset + 1) * div_x, xf)
+            section = lower_half[yi:yf, start:end]
+
+            if not deteccionEquipo(section):
+                print(f"Vía libre en subzona [{start}, {end}] ({sections} divisiones)")
+                cv.rectangle(lower_half, (start, 0), (end, yf), (0, 255, 0), 2)
+                return
+
+        print(f"Obstáculos en {sections} zonas, refinando...")
+        sections += 2
+
+    print("No se encontró vía libre tras múltiples divisiones")
+
     
-    while sections < max_sections:  #loop para que siga dividiendo y analizando frames hasta llegar a 12 (para que se pueda rendir vaya...) 
-        half_x = (xf - xi) // 2 #la mitad del ancho de la imagen
-        
-        left_section = lower_half[yi:yf, xi:xi + half_x]
-        left_obstacle = deteccionEquipo(left_section)
-
-        if not left_obstacle:
-            print(f"vía libre en la sección [{xi}, {xi + half_x}]")
-            #Aquí hay que llamar al nodo de movimiento de ROS
-            return
-        right_section = lower_half[yi:yf, int(half_x):xf]
-        right_obstacle = deteccionEquipo(right_section)
-
-        if not right_obstacle:
-            print (f"Vía libre en la sección [{xi + half_x}, {xf}]")
-            #Aquí tmb llamar al nodo de movimiento de ROS
-            return
-            
-        #si hay obstaculos en ambas secciones, analizamos una sección más pequeña
-        xf = xi + half_x
-        sections += 1
-        print("analizando nueva sub zona")
-
-    print("Tras 12 secciones, no se pudo encontrar vía libre!!")
 
 def main():
     rospy.init_node('deteccion_equipo_node', anonymous=True)
