@@ -2,7 +2,7 @@ from ultralytics import YOLO
 import cv2
 
 # Load the exported TensorRT model
-trt_model = YOLO("yolo11n.engine")
+trt_model = YOLO("best-nv2-62.engine")
 
 # Open the video capture (0 is usually the default camera)
 cap = cv2.VideoCapture(0)
