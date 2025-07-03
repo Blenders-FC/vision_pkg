@@ -40,7 +40,7 @@ def image_callback(msg):
     #balance de blancos
     lab = cv.cvtColor(frame, cv.COLOR_BGR2LAB)
     l, a, b = cv.split(lab)
-    l = cv.equalizeHist(1)
+    l = cv.equalizeHist(l)
     lab = cv.merge((l, a, b))
     frame = cv.cvtColor(lab, cv.COLOR_LAB2BGR)
 
