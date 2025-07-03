@@ -12,6 +12,7 @@ mask_blue_clean = None
 mask_red = None
 obstacle = False
 
+
 # Para rojo (dos rangos porque el rojo está en ambos extremos del espacio HSV)
 lower_red1 = np.array([0, 100, 100], np.uint8) 
 upper_red1 = np.array([10, 255, 255], np.uint8) 
@@ -37,7 +38,7 @@ def image_callback(msg):
 
 #------------------------------------------------------------ para detectar rojo y azul
 def deteccionEquipo(subsection):
-    global obstacle, mask_red_clean, mask_blue_clean, mask_red, mask_blue
+    global obstacle, mask_red_clean, mask_blue_clean, mask_red
 
     hsv = cv.cvtColor(subsection, cv.COLOR_BGR2HSV)
     
@@ -56,7 +57,6 @@ def deteccionEquipo(subsection):
 
 #------------------------------------------------------------ para mostrar las máscaras detectadas
 def display_imagenes():
-    x,y,h,w =0
     mask_red_vis = cv.bitwise_and(frame, frame, mask=mask_red_clean)
     mask_blue_vis = cv.bitwise_and(frame, frame, mask=mask_blue_clean)
     combined_vis = cv.addWeighted(mask_red_vis, 1.0, mask_blue_vis, 1.0, 0)
@@ -119,53 +119,21 @@ def display_imagenes():
 def navigation ():
     global frame 
 
-    #hay que agregar una verificación por si no hay frame 
     if frame is None:
-        rospy.logwarn("Esperando frame...")
         return
 
-    height, width = frame.shape[:2]
-    lower_half = frame[height // 2:, :width]
-    xi, xf = 0, lower_half.shape[1]
-    yi, yf = 0, lower_half.shape[0]
+    height, width = frame.shape[:2] #regresa un arreglo de altura y ancho de imágen
+    lower_half = frame [height // 2:, :] #para buscar sólo en la parte de abajo de la imagen, es decir por donde podría avanzar el robot, usando slicing
 
-    max_sections = 20
-    sections = 3
+    obstacle = deteccionEquipo(lower_half)
 
-    print("Iniciando navegación en zona inferior")
-
-    while sections <= max_sections:
-        div_x = (xf - xi) // sections
-
-        # Buscar primero desde el centro hacia la derecha
-        for offset in range(sections // 2, sections):
-            start = offset * div_x
-            end = min((offset + 1) * div_x, xf)
-            section = lower_half[yi:yf, start:end]
-
-            if not deteccionEquipo(section):
-                print(f"Vía libre en subzona [{start}, {end}] ({sections} divisiones)")
-                cv.rectangle(lower_half, (start, 0), (end, yf), (0, 255, 0), 2)
-                return
-
-        # Luego desde el centro hacia la izquierda
-        for offset in reversed(range(0, sections // 2)):
-            start = offset * div_x
-            end = min((offset + 1) * div_x, xf)
-            section = lower_half[yi:yf, start:end]
-
-            if not deteccionEquipo(section):
-                print(f"Vía libre en subzona [{start}, {end}] ({sections} divisiones)")
-                cv.rectangle(lower_half, (start, 0), (end, yf), (0, 255, 0), 2)
-                return
-
-        print(f"Obstáculos en {sections} zonas, refinando...")
-        sections += 2
-
-    print("No se encontró vía libre tras múltiples divisiones")
-
+    if not obstacle:
+        print(f"vía libre!!")
+        #Aquí hay que llamar al nodo de movimiento de ROS para avanzar
+    else : 
+        print("Obstaculo detectado, recalculando...")
+        #Hay que llamar al nodo de movimiento para caminata lateral a la derecha
     
-
 def main():
     rospy.init_node('deteccion_equipo_node', anonymous=True)
     rospy.Subscriber('/usb_cam/image_raw', Image, image_callback)
@@ -176,7 +144,6 @@ def main():
             display_imagenes()
             navigation()
         rate.sleep()
-    
     cv.destroyAllWindows()
 
 if __name__ == '__main__':
