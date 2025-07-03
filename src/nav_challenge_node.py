@@ -5,6 +5,14 @@ from cv_bridge import CvBridge
 import cv2 as cv
 import numpy as np
 
+#variables globales
+frame = None
+mask_red_clean = None
+mask_blue_clean = None
+mask_red = None
+obstacle = False
+
+
 # Para rojo (dos rangos porque el rojo está en ambos extremos del espacio HSV)
 lower_red1 = np.array([0, 100, 100], np.uint8) 
 upper_red1 = np.array([10, 255, 255], np.uint8) 
