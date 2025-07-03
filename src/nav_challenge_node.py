@@ -5,6 +5,14 @@ from cv_bridge import CvBridge
 import cv2 as cv
 import numpy as np
 
+#variables globales
+frame = None
+mask_red_clean = None
+mask_blue_clean = None
+mask_red = None
+obstacle = False
+
+
 # Para rojo (dos rangos porque el rojo está en ambos extremos del espacio HSV)
 lower_red1 = np.array([0, 100, 100], np.uint8) 
 upper_red1 = np.array([10, 255, 255], np.uint8) 
@@ -28,11 +36,18 @@ def image_callback(msg):
     except Exception as e:
         rospy.logerr(f"Error al convertir la imagen: {e}")
         return
+    
+    #balance de blancos
+    lab = cv.cvtColor(frame, cv.COLOR_BGR2LAB)
+    l, a, b = cv.split(lab)
+    l = cv.equalizeHist(1)
+    lab = cv.merge((l, a, b))
+    frame = cv.cvtColor(lab, cv.COLOR_LAB2BGR)
 
 #------------------------------------------------------------ para detectar rojo y azul
 def deteccionEquipo(subsection):
     hsv = cv.cvtColor(subsection, cv.COLOR_BGR2HSV)
-    
+
     # Procesamiento para color rojo (combinando ambos rangos)
     mask_red1 = cv.inRange(hsv, lower_red1, upper_red1)
     mask_red2 = cv.inRange(hsv, lower_red2, upper_red2)
