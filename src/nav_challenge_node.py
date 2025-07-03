@@ -17,10 +17,11 @@ azul_high = np.array([140, 255, 255], np.uint8)
 
 kernel = np.ones((5, 5), np.uint8)
 bridge = CvBridge()
+frame = None
 
 #------------------------------------------------------------ para recibir la imagen
 def image_callback(msg):
-    global frame
+    
     try:
         # Convertir imagen ROS a OpenCV
         frame = bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
