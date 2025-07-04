@@ -11,4 +11,7 @@
   <!-- Vision Node -->
   <node pkg="vision_pkg" type="main_vision_node.py" name="main_vision_node" output="screen"/>
 
+    <!-- Referee Node -->
+  <node pkg="vision_pkg" type="referee_node.py" name="referee_node" output="screen"/>
+
 </launch>
