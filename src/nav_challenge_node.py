@@ -176,7 +176,7 @@ def navigation ():
 
 def main():
     rospy.init_node('deteccion_equipo_node', anonymous=True)
-    rospy.Subscriber('/usb_cam/image_raw', Image, image_callback)
+    subimg = rospy.Subscriber('/usb_cam/image_raw', Image, image_callback)
     rospy.loginfo("Nodo iniciado...")
     rate = rospy.Rate(20)
     
