@@ -111,12 +111,12 @@ class GameStateDecoder:
 class RefereePublisher:
     def __init__(self, nodeName):
         self.robotID = rospy.get_param('robot_id', 0)
-        rospy.init_node(f"nodeName_{self.robotID+1}", anonymous=True)
+        rospy.init_node(f"nodeName_{self.robotID}", anonymous=True)
         #robot id starts from 0, but GameController starts from 1
-        self._pub = rospy.Publisher(f'robotis_{self.robotID+1}/referee_data', referee, queue_size=1)
+        self._pub = rospy.Publisher(f'robotis_{self.robotID}/referee_data', referee, queue_size=1)
         self.refereeMsg = referee()
     def publish(self,msg):
-        rospy.loginfo(f"publishing from robot_{self.robotID+1} which has ID={self.robotID}")
+        rospy.loginfo(f"publishing from robot_{self.robotID} which has ID={self.robotID}")
         self._pub.publish(msg)
         
 
@@ -145,7 +145,7 @@ class UDPCommunication:
 
 
 def main():
-    udpHandler = UDPCommunication("192.168.255","192.168.236",3838,3939)#
+    udpHandler = UDPCommunication("192.168.137.255","192.168.137.135",3838,3939)#
     refPublisher = RefereePublisher("refereeNode")
     decoder = GameStateDecoder()
     msg2referee = struct.pack('<4s4B', UDPCommunication.header,UDPCommunication.version,UDPCommunication.team,refPublisher.robotID, UDPCommunication.stdMsg)      # Mensaje (0: GAMECONTROLLER_RETURN_MSG_ALIVE, 1: GAMECONTROLLER_RETURN_MSG_MAN_PENALISE, 2: GAMECONTROLLER_RETURN_MSG_MAN_UNPENALISE)
