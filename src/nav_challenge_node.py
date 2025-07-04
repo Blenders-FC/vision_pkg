@@ -105,7 +105,7 @@ def display_imagenes():
     cv.imshow("Máscara Azul", mask_blue_clean)
     cv.imshow("Máscara Combinada", combined_mask)
     cv.imshow("Visualización Combinada", combined_vis)
-    final_img = bridge.cv2_to_imgmsg(frame, "rgb8")
+    final_img = bridge.cv2_to_imgmsg(frame, "bgr8")
     pub_img.publish(final_img)
 
     if cv.waitKey(1) == 27:  # ESC para salir
