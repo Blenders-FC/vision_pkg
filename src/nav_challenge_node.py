@@ -29,7 +29,7 @@ frame = None
 
 #------------------------------------------------------------ para recibir la imagen
 def image_callback(msg):
-    
+    global frame
     try:
         # Convertir imagen ROS a OpenCV
         frame = bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
@@ -182,7 +182,7 @@ def main():
     while not rospy.is_shutdown():
         if frame is not None:
             rospy.loginfo("Procesando frame...")
-            display_imagenes()
+            #display_imagenes()
             navigation()
         else:
             rospy.logwarn("Aún no hay frame disponible.")
