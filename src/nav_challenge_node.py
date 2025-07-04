@@ -1,31 +1,11 @@
 #!/usr/bin/env python3
 import rospy
 from sensor_msgs.msg import Image
+from geometry_msgs.msg import Point
 from cv_bridge import CvBridge
 import cv2 as cv
 import numpy as np
 
-#variables globales
-frame = None
-mask_red_clean = None
-mask_blue_clean = None
-mask_red = None
-obstacle = False
-
-
-# Para rojo (dos rangos porque el rojo está en ambos extremos del espacio HSV)
-lower_red1 = np.array([0, 100, 100], np.uint8) 
-upper_red1 = np.array([10, 255, 255], np.uint8) 
-lower_red2 = np.array([170, 100, 100], np.uint8) 
-upper_red2 = np.array([180, 255, 255], np.uint8) 
-
-# Para azul
-azul_low = np.array([100, 100, 100], np.uint8)
-azul_high = np.array([140, 255, 255], np.uint8)
-
-kernel = np.ones((5, 5), np.uint8)
-bridge = CvBridge()
-frame = None
 
 #------------------------------------------------------------ para recibir la imagen
 def image_callback(msg):
@@ -43,6 +23,13 @@ def image_callback(msg):
     l = cv.equalizeHist(l)
     lab = cv.merge((l, a, b))
     frame = cv.cvtColor(lab, cv.COLOR_LAB2BGR)
+    
+    if frame is not None:
+            rospy.loginfo("Procesando frame...")
+            display_imagenes()
+            navigation()
+    else:
+        rospy.logwarn("Aún no hay frame disponible.")
 
 #------------------------------------------------------------ para detectar rojo y azul
 def deteccionEquipo(subsection):
@@ -118,6 +105,7 @@ def display_imagenes():
     cv.imshow("Máscara Azul", mask_blue_clean)
     cv.imshow("Máscara Combinada", combined_mask)
     cv.imshow("Visualización Combinada", combined_vis)
+    pub_img.publish(combined_vis)
 
     if cv.waitKey(1) == 27:  # ESC para salir
         rospy.signal_shutdown("Usuario cerró la ventana")
@@ -172,25 +160,39 @@ def navigation ():
 
     print("No se encontró vía libre tras múltiples divisiones")
 
-    
-
-def main():
-    rospy.init_node('deteccion_equipo_node', anonymous=True)
-    subimg = rospy.Subscriber('/usb_cam/image_raw', Image, image_callback)
-    rospy.loginfo("Nodo iniciado...")
-    rate = rospy.Rate(20)
-    
-    while not rospy.is_shutdown():
-        if frame is not None:
-            rospy.loginfo("Procesando frame...")
-            #display_imagenes()
-            navigation()
-        else:
-            rospy.logwarn("Aún no hay frame disponible.")
-        rate.sleep()
-
-    cv.destroyAllWindows()
 
 if __name__ == '__main__':
-    main()
+    #variables iniciales
+    frame = None
+    mask_red_clean = None
+    mask_blue_clean = None
+    mask_red = None
+    obstacle = False
+
+
+    # Para rojo (dos rangos porque el rojo está en ambos extremos del espacio HSV)
+    lower_red1 = np.array([0, 100, 100], np.uint8) 
+    upper_red1 = np.array([10, 255, 255], np.uint8) 
+    lower_red2 = np.array([170, 100, 100], np.uint8) 
+    upper_red2 = np.array([180, 255, 255], np.uint8) 
+
+    # Para azul
+    azul_low = np.array([100, 100, 100], np.uint8)
+    azul_high = np.array([140, 255, 255], np.uint8)
+
+    kernel = np.ones((5, 5), np.uint8)
+    bridge = CvBridge()
+    frame = None
+    
+    rospy.init_node('deteccion_equipo_node', anonymous=True)
+    robot_id = rospy.get_param('robot_id', 1)
+    pub_img = rospy.Publisher(f'/robotis_{robot_id}/ImgNavChallenge', Image, queue_size=1)
+    pub_free_path = rospy.Publisher(f'/robotis_{robot_id}/free_path', Point, queue_size=1)
+    
+    rospy.loginfo("Nodo iniciado...")
+    
+    subimg = rospy.Subscriber('/usb_cam/image_raw', Image, image_callback)
+    
+    rospy.spin()
+    cv.destroyAllWindows()
 
