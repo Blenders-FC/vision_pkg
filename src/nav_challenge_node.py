@@ -125,7 +125,6 @@ def display_imagenes():
 #------------------------------------------------------------ para la navegación
 def navigation ():
     global frame 
-    obstacle, _, _, _, _=deteccionEquipo(frame)
 
     #hay que agregar una verificación por si no hay frame 
     if frame is None:
@@ -150,7 +149,7 @@ def navigation ():
             start = offset * div_x
             end = min((offset + 1) * div_x, xf)
             section = lower_half[yi:yf, start:end]
-
+            obstacle, *_ = deteccionEquipo(section)
             if not obstacle:
                 print(f"Vía libre en subzona [{start}, {end}] ({sections} divisiones)")
                 cv.rectangle(lower_half, (start, 0), (end, yf), (0, 255, 0), 2)
@@ -161,7 +160,7 @@ def navigation ():
             start = offset * div_x
             end = min((offset + 1) * div_x, xf)
             section = lower_half[yi:yf, start:end]
-
+            obstacle, *_ = deteccionEquipo(section)
             if not obstacle:
                 print(f"Vía libre en subzona [{start}, {end}] ({sections} divisiones)")
                 cv.rectangle(lower_half, (start, 0), (end, yf), (0, 255, 0), 2)
