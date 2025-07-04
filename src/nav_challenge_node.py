@@ -182,7 +182,7 @@ def main():
     while not rospy.is_shutdown():
         if frame is not None:
             rospy.loginfo("Procesando frame...")
-            display_imagenes()
+            #display_imagenes()
             navigation()
         else:
             rospy.logwarn("Aún no hay frame disponible.")
