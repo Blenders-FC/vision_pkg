@@ -177,13 +177,17 @@ def main():
     rospy.init_node('deteccion_equipo_node', anonymous=True)
     rospy.Subscriber('/usb_cam/image_raw', Image, image_callback)
     rospy.loginfo("Nodo iniciado...")
-    rate = rospy.Rate(20) #hay que ver que rate conviene
+    rate = rospy.Rate(20)
+    
     while not rospy.is_shutdown():
         if frame is not None:
+            rospy.loginfo("Procesando frame...")
             display_imagenes()
             navigation()
+        else:
+            rospy.logwarn("Aún no hay frame disponible.")
         rate.sleep()
-    
+
     cv.destroyAllWindows()
 
 if __name__ == '__main__':
