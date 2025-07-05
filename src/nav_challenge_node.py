@@ -142,6 +142,9 @@ def navigation ():
             if not obstacle:
                 print(f"Vía libre en subzona [{start}, {end}] ({sections} divisiones)")
                 cv.rectangle(lower_half, (start, 0), (end, yf), (0, 255, 0), 2)
+                cv.circle(lower_half, (start, 0)//2, (end, yf)//2, (0, 255, 0), -1)
+                while input("esperando a cambio de posición")!=32:
+                    print("Moviendosé hacia espacio libre (derecha)")
                 return
 
         # Luego desde el centro hacia la izquierda
@@ -153,6 +156,9 @@ def navigation ():
             if not obstacle:
                 print(f"Vía libre en subzona [{start}, {end}] ({sections} divisiones)")
                 cv.rectangle(lower_half, (start, 0), (end, yf), (0, 255, 0), 2)
+                cv.circle(lower_half, (start, 0)//2, (end, yf)//2, (0, 255, 0), -1)
+                while input("esperando a cambio de posición")!=32:
+                    print("Moviendosé hacia espacio libre (izquierda)")
                 return
 
         print(f"Obstáculos en {sections} zonas, refinando...")
