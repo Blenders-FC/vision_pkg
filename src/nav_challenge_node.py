@@ -26,8 +26,8 @@ def image_callback(msg):
     
     if frame is not None:
             rospy.loginfo("Procesando frame...")
-            display_imagenes()
             navigation()
+            display_imagenes()
     else:
         rospy.logwarn("Aún no hay frame disponible.")
 
