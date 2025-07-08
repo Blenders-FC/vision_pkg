@@ -56,6 +56,7 @@ def deteccionEquipo(subsection):
 
 #------------------------------------------------------------ para mostrar las máscaras detectadas
 def display_imagenes():
+    global frame
     _, mask_red_clean, mask_blue_clean, mask_red, mask_blue=deteccionEquipo(frame)
     mask_red_vis = cv.bitwise_and(frame, frame, mask=mask_red_clean)
     mask_blue_vis = cv.bitwise_and(frame, frame, mask=mask_blue_clean)
@@ -159,7 +160,6 @@ def navigation ():
                     estado=DERECHA
                 elif offset < (sections // 2)+1:
                     estado=IZQUIERDA
-                break
 
         # Luego desde el centro hacia la izquierda
         for offset in reversed(range(0, sections // 2)):
@@ -177,7 +177,6 @@ def navigation ():
                     estado=DERECHA
                 elif offset < (sections // 2)+1:
                     estado=IZQUIERDA
-                break
         if estado!=NO_DETECTA:
             break
         print(f"Obstáculos en {sections} zonas, refinando...")
