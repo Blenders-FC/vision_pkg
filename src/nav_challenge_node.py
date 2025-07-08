@@ -154,11 +154,11 @@ def navigation ():
                 print(f"Vía libre en subzona [{start}, {end}] ({sections} divisiones)")
                 cv.rectangle(lower_half, (start, 0), (end, yf), (0, 255, 0), 2)
                 cv.circle(lower_half, ((start + 0)//2, (end + yf)//2),5, (0, 255, 0), -1)
-                if offset == (sections // 2)+1:
+                if offset == (sections // 2):
                     estado=CENTRO
-                elif offset > (sections // 2)+1:
+                elif offset > (sections // 2):
                     estado=DERECHA
-                elif offset < (sections // 2)+1:
+                elif offset < (sections // 2):
                     estado=IZQUIERDA
 
         # Luego desde el centro hacia la izquierda
@@ -171,11 +171,11 @@ def navigation ():
                 print(f"Vía libre en subzona [{start}, {end}] ({sections} divisiones)")
                 cv.rectangle(lower_half, (start, 0), (end, yf), (0, 255, 0), 2)
                 cv.circle(lower_half, ((start + 0)//2, (end + yf)//2),5, (0, 255, 0), -1)
-                if offset == (sections // 2)+1:
+                if offset == (sections // 2):
                     estado=CENTRO
-                elif offset > (sections // 2)+1:
+                elif offset > (sections // 2):
                     estado=DERECHA
-                elif offset < (sections // 2)+1:
+                elif offset < (sections // 2):
                     estado=IZQUIERDA
         if estado!=NO_DETECTA:
             break
