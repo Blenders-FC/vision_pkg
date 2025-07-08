@@ -15,7 +15,7 @@ IZQUIERDA = 2
 CENTRO = 3
 
 # Ventana que guarda los últimos estados observados
-ventana_estados = deque(maxlen=5)
+ventana_estados = deque(maxlen=10)
 
 #------------------------------------------------------------ para recibir la imagen
 def image_callback(msg):
@@ -60,7 +60,7 @@ def deteccionEquipo(subsection):
 
 #------------------------------------------------------------ para mostrar las máscaras detectadas
 def display_imagenes():
-    global frame
+    global frame, estado_estable, zona_estable
     _, mask_red_clean, mask_blue_clean, mask_red, mask_blue=deteccionEquipo(frame)
     mask_red_vis = cv.bitwise_and(frame, frame, mask=mask_red_clean)
     mask_blue_vis = cv.bitwise_and(frame, frame, mask=mask_blue_clean)
@@ -110,9 +110,14 @@ def display_imagenes():
         cv.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 255, 255), 3)
         cv.circle(frame, ((x_min + x_max) // 2, (y_min + y_max) // 2), 5, (255, 0, 0), -1)
 
-    estado_texto = ["No detecta", "Derecha", "Izquierda", "Centro"][estado]
+    estado_texto = ["No detecta", "Derecha", "Izquierda", "Centro"][estado_estable]
     cv.putText(frame, f"Estado: {estado_texto}", (10, 30), 
                cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+    
+    if estado_estable != NO_DETECTA and zona_estable is not None:
+        x1, x2, y1, y2 = zona_estable
+        cv.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        cv.circle(frame, ((x1 + x2) // 2, (y1 + y2) // 2), 5, (0, 255, 0), -1)
 
     # Mostrar todas las visualizaciones
     cv.imshow("Original", frame)
@@ -130,6 +135,7 @@ def display_imagenes():
 def navigation():
     global frame
     global estado
+    global estado_estable, zona_estable
     if frame is None:
         rospy.logwarn("Esperando frame...")
         return
@@ -157,9 +163,7 @@ def navigation():
 
             if not obstacle:
                 print(f"Vía libre en subzona [{start}, {end}] ({sections} divisiones)")
-                cv.rectangle(lower_half, (start, 0), (end, yf), (0, 255, 0), 2)
-                cv.circle(lower_half, ((start + end)//2, yf//2), 5, (0, 255, 0), -1)
-
+                zona_estable = (start, end, yi + height // 2, yf + height // 2)
                 if offset == (sections // 2):
                     estado = CENTRO
                 elif offset > (sections // 2):
@@ -179,8 +183,7 @@ def navigation():
 
             if not obstacle:
                 print(f"Vía libre en subzona [{start}, {end}] ({sections} divisiones)")
-                cv.rectangle(lower_half, (start, 0), (end, yf), (0, 255, 0), 2)
-                cv.circle(lower_half, ((start + end)//2, yf//2), 5, (0, 255, 0), -1)
+                zona_estable = (start, end, yi + height // 2, yf + height // 2)
 
                 if offset == (sections // 2):
                     estado = CENTRO
@@ -210,6 +213,8 @@ def navigation():
 if __name__ == '__main__':
     #variables iniciales
     estado = 0
+    estado_estable = 0
+    zona_estable = None
     frame = None
     mask_red_clean = None
     mask_blue_clean = None
