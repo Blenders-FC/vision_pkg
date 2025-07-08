@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import rospy
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point
@@ -13,7 +15,9 @@ pub_robot = None
 bridge = CvBridge()
 
 # Load YOLOv11 TensorRT model
-trt_model = YOLO("rhoban-v6.engine")
+model_path = "/home/blenders/catkin_ws/src/vision_pkg/src/"
+model_name = "rhoban-v6.engine"
+trt_model = YOLO(model_path + model_name)
 
 def process_and_publish(frame):
     # Run inference
