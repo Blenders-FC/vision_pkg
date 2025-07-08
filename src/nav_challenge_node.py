@@ -123,10 +123,9 @@ def display_imagenes():
         rospy.signal_shutdown("Usuario cerró la ventana")
 
 #------------------------------------------------------------ para la navegación
-def navigation ():
-    global frame 
+def navigation():
+    global frame
     global estado
-    #hay que agregar una verificación por si no hay frame 
     if frame is None:
         rospy.logwarn("Esperando frame...")
         return
@@ -136,6 +135,7 @@ def navigation ():
     xi, xf = 0, lower_half.shape[1]
     yi, yf = 0, lower_half.shape[0]
 
+    estado = NO_DETECTA
     max_sections = 20
     sections = 3
 
@@ -144,47 +144,57 @@ def navigation ():
     while sections <= max_sections:
         div_x = (xf - xi) // sections
 
-        # Buscar primero desde el centro hacia la derecha
+        # Centro → derecha
         for offset in range(sections // 2, sections):
             start = offset * div_x
             end = min((offset + 1) * div_x, xf)
             section = lower_half[yi:yf, start:end]
             obstacle, *_ = deteccionEquipo(section)
+
             if not obstacle:
                 print(f"Vía libre en subzona [{start}, {end}] ({sections} divisiones)")
                 cv.rectangle(lower_half, (start, 0), (end, yf), (0, 255, 0), 2)
-                cv.circle(lower_half, ((start + 0)//2, (end + yf)//2),5, (0, 255, 0), -1)
-                if offset == (sections // 2):
-                    estado=CENTRO
-                elif offset > (sections // 2):
-                    estado=DERECHA
-                elif offset < (sections // 2):
-                    estado=IZQUIERDA
+                cv.circle(lower_half, ((start + end)//2, yf//2), 5, (0, 255, 0), -1)
 
-        # Luego desde el centro hacia la izquierda
+                if offset == (sections // 2):
+                    estado = CENTRO
+                elif offset > (sections // 2):
+                    estado = DERECHA
+                elif offset < (sections // 2):
+                    estado = IZQUIERDA
+
+                pub_state.publish(estado)
+                return estado  # MUY IMPORTANTE
+
+        # Centro → izquierda
         for offset in reversed(range(0, sections // 2)):
             start = offset * div_x
             end = min((offset + 1) * div_x, xf)
             section = lower_half[yi:yf, start:end]
             obstacle, *_ = deteccionEquipo(section)
+
             if not obstacle:
                 print(f"Vía libre en subzona [{start}, {end}] ({sections} divisiones)")
                 cv.rectangle(lower_half, (start, 0), (end, yf), (0, 255, 0), 2)
-                cv.circle(lower_half, ((start + 0)//2, (end + yf)//2),5, (0, 255, 0), -1)
+                cv.circle(lower_half, ((start + end)//2, yf//2), 5, (0, 255, 0), -1)
+
                 if offset == (sections // 2):
-                    estado=CENTRO
+                    estado = CENTRO
                 elif offset > (sections // 2):
-                    estado=DERECHA
+                    estado = DERECHA
                 elif offset < (sections // 2):
-                    estado=IZQUIERDA
-        if estado!=NO_DETECTA:
-            break
+                    estado = IZQUIERDA
+
+                pub_state.publish(estado)
+                return estado  # MUY IMPORTANTE
+
         print(f"Obstáculos en {sections} zonas, refinando...")
         sections += 2
-        print("No se encontró vía libre tras múltiples divisiones")
-    # Publicar el estado
+
+    print("No se encontró vía libre tras múltiples divisiones")
     pub_state.publish(estado)
     return estado
+
 
 
 if __name__ == '__main__':
