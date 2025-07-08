@@ -204,7 +204,11 @@ def navigation():
 
     print("No se encontró vía libre tras múltiples divisiones")
     # Calcular el estado más común en la ventana
-    estado_estable = max(set(ventana_estados), key=ventana_estados.count)
+    solo_validos = [e for e in ventana_estados if e != NO_DETECTA]
+    if solo_validos:
+        estado_estable = max(set(solo_validos), key=solo_validos.count)
+    else:
+        estado_estable = NO_DETECTA
     # Publicar solo el estado más frecuente
     pub_state.publish(estado_estable)
 
