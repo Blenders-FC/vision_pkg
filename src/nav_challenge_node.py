@@ -4,6 +4,7 @@ from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point
 from std_msgs.msg import UInt8  # Para el estado simple
 from cv_bridge import CvBridge
+from collections import deque
 import cv2 as cv
 import numpy as np
 
@@ -12,6 +13,9 @@ NO_DETECTA = 0
 DERECHA = 1
 IZQUIERDA = 2
 CENTRO = 3
+
+# Ventana que guarda los últimos estados observados
+ventana_estados = deque(maxlen=5)
 
 #------------------------------------------------------------ para recibir la imagen
 def image_callback(msg):
@@ -162,9 +166,9 @@ def navigation():
                     estado = DERECHA
                 elif offset < (sections // 2):
                     estado = IZQUIERDA
-
-                pub_state.publish(estado)
-                return estado  # MUY IMPORTANTE
+                # Añadir el estado actual a la ventana
+                ventana_estados.append(estado)
+                break
 
         # Centro → izquierda
         for offset in reversed(range(0, sections // 2)):
@@ -185,15 +189,21 @@ def navigation():
                 elif offset < (sections // 2):
                     estado = IZQUIERDA
 
-                pub_state.publish(estado)
-                return estado  # MUY IMPORTANTE
-
+                # Añadir el estado actual a la ventana
+                ventana_estados.append(estado)
+                break
+        if estado!=NO_DETECTA:
+            break
         print(f"Obstáculos en {sections} zonas, refinando...")
         sections += 2
+        # Añadir el estado actual a la ventana
+        ventana_estados.append(NO_DETECTA)
 
     print("No se encontró vía libre tras múltiples divisiones")
-    pub_state.publish(estado)
-    return estado
+    # Calcular el estado más común en la ventana
+    estado_estable = max(set(ventana_estados), key=ventana_estados.count)
+    # Publicar solo el estado más frecuente
+    pub_state.publish(estado_estable)
 
 
 
