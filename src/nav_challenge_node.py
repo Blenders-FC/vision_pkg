@@ -175,7 +175,7 @@ def navigation():
                 break
 
         # Centro → izquierda
-        for offset in reversed(range(0, sections // 2)):
+        for offset in reversed(range(0, sections // 2+1)):
             start = offset * div_x
             end = min((offset + 1) * div_x, xf)
             section = lower_half[yi:yf, start:end]
