@@ -2,10 +2,16 @@
 import rospy
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point
+from std_msgs.msg import UInt8  # Para el estado simple
 from cv_bridge import CvBridge
 import cv2 as cv
 import numpy as np
 
+#------------------------------------------------------------ posibles estados
+NO_DETECTA = 0
+DERECHA = 1
+IZQUIERDA = 2
+CENTRO = 3
 
 #------------------------------------------------------------ para recibir la imagen
 def image_callback(msg):
@@ -99,12 +105,16 @@ def display_imagenes():
         cv.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 255, 255), 3)
         cv.circle(frame, ((x_min + x_max) // 2, (y_min + y_max) // 2), 5, (255, 0, 0), -1)
 
+    estado_texto = ["No detecta", "Derecha", "Izquierda", "Centro"][estado]
+    cv.putText(frame, f"Estado: {estado_texto}", (10, 30), 
+               cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+
     # Mostrar todas las visualizaciones
     cv.imshow("Original", frame)
-    cv.imshow("Máscara Roja", mask_red_clean)
-    cv.imshow("Máscara Azul", mask_blue_clean)
-    cv.imshow("Máscara Combinada", combined_mask)
-    cv.imshow("Visualización Combinada", combined_vis)
+    #cv.imshow("Máscara Roja", mask_red_clean)
+    #cv.imshow("Máscara Azul", mask_blue_clean)
+    #cv.imshow("Máscara Combinada", combined_mask)
+    #cv.imshow("Visualización Combinada", combined_vis)
     final_img = bridge.cv2_to_imgmsg(frame, "bgr8")
     pub_img.publish(final_img)
 
@@ -143,9 +153,13 @@ def navigation ():
                 print(f"Vía libre en subzona [{start}, {end}] ({sections} divisiones)")
                 cv.rectangle(lower_half, (start, 0), (end, yf), (0, 255, 0), 2)
                 cv.circle(lower_half, (start, 0)//2, (end, yf)//2, (0, 255, 0), -1)
-                while input("esperando a cambio de posición")!=32:
-                    print("Moviendosé hacia espacio libre (derecha)")
-                return
+                if offset == (sections // 2)+1:
+                    estado=CENTRO
+                elif offset > (sections // 2)+1:
+                    estado=DERECHA
+                elif offset < (sections // 2)+1:
+                    estado=IZQUIERDA
+                break
 
         # Luego desde el centro hacia la izquierda
         for offset in reversed(range(0, sections // 2)):
@@ -157,18 +171,26 @@ def navigation ():
                 print(f"Vía libre en subzona [{start}, {end}] ({sections} divisiones)")
                 cv.rectangle(lower_half, (start, 0), (end, yf), (0, 255, 0), 2)
                 cv.circle(lower_half, (start, 0)//2, (end, yf)//2, (0, 255, 0), -1)
-                while input("esperando a cambio de posición")!=32:
-                    print("Moviendosé hacia espacio libre (izquierda)")
-                return
-
+                if offset == (sections // 2)+1:
+                    estado=CENTRO
+                elif offset > (sections // 2)+1:
+                    estado=DERECHA
+                elif offset < (sections // 2)+1:
+                    estado=IZQUIERDA
+                break
+        if estado!=NO_DETECTA:
+            break
         print(f"Obstáculos en {sections} zonas, refinando...")
         sections += 2
-
-    print("No se encontró vía libre tras múltiples divisiones")
+        print("No se encontró vía libre tras múltiples divisiones")
+    # Publicar el estado
+    pub_state.publish(estado)
+    return estado
 
 
 if __name__ == '__main__':
     #variables iniciales
+    estado = 0
     frame = None
     mask_red_clean = None
     mask_blue_clean = None
@@ -193,6 +215,7 @@ if __name__ == '__main__':
     rospy.init_node('deteccion_equipo_node', anonymous=True)
     robot_id = rospy.get_param('robot_id', 1)
     pub_img = rospy.Publisher(f'/robotis_{robot_id}/ImgNavChallenge', Image, queue_size=1)
+    pub_state = rospy.Publisher(f'/robotis_{robot_id}/via_libre_state', UInt8, queue_size=1, latch=True)
     pub_free_path = rospy.Publisher(f'/robotis_{robot_id}/free_path', Point, queue_size=1)
     
     rospy.loginfo("Nodo iniciado...")
