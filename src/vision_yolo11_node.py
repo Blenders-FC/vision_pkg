@@ -13,7 +13,7 @@ pub_robot = None
 bridge = CvBridge()
 
 # Load YOLOv11 TensorRT model
-trt_model = YOLO("best-nv2-62.engine")
+trt_model = YOLO("rhoban-v6.engine")
 
 def process_and_publish(frame):
     # Run inference
