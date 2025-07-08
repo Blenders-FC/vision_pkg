@@ -2,7 +2,7 @@
 import rospy
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point
-from std_msgs.msg import UInt8,Int32  # Para el estado simple
+from std_msgs.msg import Int32  # Para el estado simple
 from cv_bridge import CvBridge
 from collections import deque
 import cv2 as cv
@@ -154,28 +154,21 @@ def navigation():
     while sections <= max_sections:
         div_x = (xf - xi) // sections
 
-        # Centro → derecha
-        for offset in range(sections // 2, sections):
-            start = offset * div_x
-            end = min((offset + 1) * div_x, xf)
-            section = lower_half[yi:yf, start:end]
-            obstacle, *_ = deteccionEquipo(section)
+        prioridades = []
 
-            if not obstacle:
-                print(f"Vía libre en subzona [{start}, {end}] ({sections} divisiones)")
-                zona_estable = (start, end, yi + height // 2, yf + height // 2)
-                if offset == (sections // 2):
-                    estado = CENTRO
-                elif offset > (sections // 2):
-                    estado = DERECHA
-                elif offset < (sections // 2):
-                    estado = IZQUIERDA
-                # Añadir el estado actual a la ventana
-                ventana_estados.append(estado)
-                break
+        # Centro
+        prioridades.append(sections // 2)
 
-        # Centro → izquierda
-        for offset in reversed(range(0, sections // 2+1)):
+        # Derecha
+        for i in range(sections // 2 + 1, sections):
+            prioridades.append(i)
+
+        # Izquierda
+        for i in reversed(range(0, sections // 2)):
+            prioridades.append(i)
+
+        # Ahora recorremos en orden de prioridad real
+        for offset in prioridades:
             start = offset * div_x
             end = min((offset + 1) * div_x, xf)
             section = lower_half[yi:yf, start:end]
@@ -189,10 +182,9 @@ def navigation():
                     estado = CENTRO
                 elif offset > (sections // 2):
                     estado = DERECHA
-                elif offset < (sections // 2):
+                else:
                     estado = IZQUIERDA
 
-                # Añadir el estado actual a la ventana
                 ventana_estados.append(estado)
                 break
         if estado!=NO_DETECTA:
