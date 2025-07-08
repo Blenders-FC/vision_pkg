@@ -2,7 +2,7 @@
 import rospy
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point
-from std_msgs.msg import UInt8  # Para el estado simple
+from std_msgs.msg import UInt8,Int32  # Para el estado simple
 from cv_bridge import CvBridge
 from collections import deque
 import cv2 as cv
@@ -210,7 +210,7 @@ def navigation():
     else:
         estado_estable = NO_DETECTA
     # Publicar solo el estado más frecuente
-    pub_state.publish(estado_estable)
+    pub_state.publish(np.int32(estado_estable))
 
 
 
@@ -241,9 +241,9 @@ if __name__ == '__main__':
     frame = None
     
     rospy.init_node('deteccion_equipo_node', anonymous=True)
-    robot_id = rospy.get_param('robot_id', 1)
+    robot_id = rospy.get_param('robot_id', 4)
     pub_img = rospy.Publisher(f'/robotis_{robot_id}/ImgNavChallenge', Image, queue_size=1)
-    pub_state = rospy.Publisher(f'/robotis_{robot_id}/via_libre_state', UInt8, queue_size=1, latch=True)
+    pub_state = rospy.Publisher(f'/robotis_{robot_id}/via_libre_state', Int32, queue_size=1, latch=True)
     pub_free_path = rospy.Publisher(f'/robotis_{robot_id}/free_path', Point, queue_size=1)
     
     rospy.loginfo("Nodo iniciado...")
