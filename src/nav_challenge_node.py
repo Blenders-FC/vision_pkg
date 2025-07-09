@@ -120,7 +120,7 @@ def display_imagenes():
         cv.circle(frame, ((x1 + x2) // 2, (y1 + y2) // 2), 5, (0, 255, 0), -1)
 
     # Mostrar todas las visualizaciones
-    cv.imshow("Original", frame)
+    #cv.imshow("Original", frame)
     #cv.imshow("Máscara Roja", mask_red_clean)
     #cv.imshow("Máscara Azul", mask_blue_clean)
     #cv.imshow("Máscara Combinada", combined_mask)
