@@ -15,61 +15,63 @@ pub_robot = None
 bridge = CvBridge()
 
 # Load YOLOv11 TensorRT model
-model_path = "/home/blenders/catkin_ws/src/vision_pkg/src/"
+model_path = "/home/blenders/catkin_ws/src/vision_pkg/models/"
 model_name = "rhoban-v6.engine"
 trt_model = YOLO(model_path + model_name)
 
 def process_and_publish(frame):
-    # Run inference
     results = trt_model(frame)
-
-    # Get annotated image for visualization
     annotated_frame = results[0].plot()
-
-    # Publish annotated image
     img_msg = bridge.cv2_to_imgmsg(annotated_frame, encoding="bgr8")
     pub_img.publish(img_msg)
 
-    # Initialize centers
+    # Default fallback
     ball_center = Point(999, 999, 0)
     goal_center = Point(999, 999, 0)
     robot_center = Point(999, 999, 0)
 
-    # Process detections
+    # Confidence tracking
+    best_ball_conf = 0
+    best_robot_conf = 0
+    best_goal_conf = 0
+
     for r in results:
         for box in r.boxes:
             cls_id = int(box.cls[0])
+            conf = float(box.conf[0])
             xyxy = box.xyxy[0].cpu().numpy()
-            cx = int((xyxy[0] + xyxy[2]) / 2)
-            cy = int((xyxy[1] + xyxy[3]) / 2)
-
+            x1, y1, x2, y2 = xyxy
+            cx = int((x1 + x2) / 2)
+            cy = int(y2)  # bottom Y
             label = r.names[cls_id].lower()
 
-            print("label: ", label)
+            print("label:", label, "| conf:", conf)
 
-            # TODO: Check label names when migrating model
-
-            if "ball" in label:
+            if "ball" in label and conf > best_ball_conf:
+                best_ball_conf = conf
                 ball_center.x = cx
                 ball_center.y = cy
 
-            elif "goal" in label:
+            elif "goal" in label and conf > best_goal_conf:
+                best_goal_conf = conf
                 goal_center.x = cx
                 goal_center.y = cy
 
-            elif "robot" in label:
+            elif "robot" in label and conf > best_robot_conf:
+                best_robot_conf = conf
                 robot_center.x = cx
                 robot_center.y = cy
 
-    # Publish centers
+    # Publish final positions
     pub_ball.publish(ball_center)
     pub_goal.publish(goal_center)
     pub_robot.publish(robot_center)
 
+
 def main():
     global pub_img, pub_ball, pub_goal, pub_robot
 
-    rospy.init_node('vision_yolo11_node')
+    rospy.init_node('main_vision_node')
     robot_id = rospy.get_param('robot_id', 1)
 
     # Publishers
