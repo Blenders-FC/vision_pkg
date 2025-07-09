@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 import rospy
+import cv2 as cv
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point
 from std_msgs.msg import Int32  # Para el estado simple
 from cv_bridge import CvBridge
 from collections import deque
-import cv2 as cv
 import numpy as np
 
 #------------------------------------------------------------ posibles estados
