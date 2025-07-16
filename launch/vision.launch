@@ -18,7 +18,7 @@
   </node> -->
 
   <!-- Referee Node -->
-  <node pkg="vision_pkg" type="referee_node.py" name="referee_node" output="screen"/>
+  <!-- <node pkg="vision_pkg" type="referee_node.py" name="referee_node" output="screen"/> -->
 
 
 </launch>
