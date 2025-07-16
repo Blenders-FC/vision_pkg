@@ -2,7 +2,7 @@
 <launch>    
 
   <!-- Define robot_id with a default value (used if not inherited) -->
-  <arg name="robot_id" default="2"/>
+  <arg name="robot_id" default="$(env ROBOT_ID)" doc="robot id [1, 2, 3, 4]"/>
   <param name="robot_id" value="$(arg robot_id)"/>
 
   <!-- Define quadrant with a default value (used if not inherited) -->
