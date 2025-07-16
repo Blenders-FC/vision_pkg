@@ -95,8 +95,8 @@ def process_and_publish(frame):
                 rospy.loginfo("Pre-init: quadrant 1 or 3 → send LEFT goal as ball_center")
                 pub_ball.publish(left_goal)
             elif quadrant in [2, 4]:
-                rospy.loginfo("Pre-init: quadrant 2 or 4 → send RIGTH goal as ball_center")
-                pub_ball.publish(rigth_goal)
+                rospy.loginfo("Pre-init: quadrant 2 or 4 → send RIGHT goal as ball_center")
+                pub_ball.publish(right_goal)
     else:
         rospy.loginfo("Post-init: sending actual BALL as ball_center")
         pub_ball.publish(ball_center)
@@ -111,7 +111,7 @@ def main():
 
     rospy.init_node('main_vision_node')
     robot_id = rospy.get_param('~robot_id', 1)
-    quadrant = rospy.get_param('~quadrant', 4)
+    quadrant = rospy.get_param('~quadrant', 3)
 
     # Subscribers
     rospy.Subscriber(f'/robotis_{robot_id}/robot_pose/init_pose', RobotPose, init_pose_callback)

@@ -2,20 +2,21 @@
 <launch>    
 
   <!-- Define robot_id with a default value (used if not inherited) -->
-  <arg name="robot_id" default="4"/>
+  <arg name="robot_id" default="2"/>
   <param name="robot_id" value="$(arg robot_id)"/>
 
   <!-- Define quadrant with a default value (used if not inherited) -->
-  <arg name="quadrant" default="4"/>
+  <arg name="quadrant" default="3"/>
   <param name="quadrant" value="$(arg quadrant)"/>
 
   <!-- Camera Node -->
   <!-- <node pkg="usb_cam" type="usb_cam_node" name="usb_cam_node" output="screen"/> -->
 
   <!-- Vision Node -->
-  <node pkg="vision_pkg" type="main_vision_node.py" name="main_vision_node" output="screen"/>
-    <!-- <param name="robot_id"               value="4"/>
-  </node> -->
+  <node pkg="vision_pkg" type="main_vision_node.py" name="main_vision_node" output="screen">
+    <param name="robot_id"               value="$(arg robot_id)"/>
+    <param name="quadrant"               value="$(arg quadrant)"/>
+  </node> 
 
   <!-- Referee Node -->
   <!-- <node pkg="vision_pkg" type="referee_node.py" name="referee_node" output="screen"/> -->
