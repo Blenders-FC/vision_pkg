@@ -5,6 +5,10 @@
   <arg name="robot_id" default="4"/>
   <param name="robot_id" value="$(arg robot_id)"/>
 
+  <!-- Define quadrant with a default value (used if not inherited) -->
+  <arg name="quadrant" default="4"/>
+  <param name="quadrant" value="$(arg quadrant)"/>
+
   <!-- Camera Node -->
   <!-- <node pkg="usb_cam" type="usb_cam_node" name="usb_cam_node" output="screen"/> -->
 
