@@ -15,7 +15,6 @@ pub_goal = None
 pub_robot = None
 bridge = CvBridge()
 valid_pose_received = False
-last_right_goal = Point(999, 999, 0)
 
 def init_pose_callback(msg):
     global valid_pose_received
@@ -23,7 +22,7 @@ def init_pose_callback(msg):
     rospy.loginfo(f"[Pose] valid: {valid_pose_received}")
 
 def process_and_publish(frame):
-    global valid_pose_received, quadrant, last_right_goal
+    global valid_pose_received, quadrant
 
     results = trt_model(frame)
     annotated_frame = results[0].plot()
@@ -55,7 +54,8 @@ def process_and_publish(frame):
                 ball_center = Point(cx, cy, 0)
 
             elif "goal" in label:
-                goal_candidates.append((conf, Point(cx, cy, 0)))
+                if conf > 0.5:
+                    goal_candidates.append((conf, Point(cx, cy, 0)))
 
             elif "robot" in label and conf > best_robot_conf:
                 best_robot_conf = conf
@@ -63,7 +63,7 @@ def process_and_publish(frame):
 
     # === Select 2 highest confidence goals ===
     left_goal = Point(999, 999, 0)
-    right_goal = last_right_goal  # fallback to last known
+    right_goal = Point(999, 999, 0)
 
     goal_candidates = sorted(goal_candidates, key=lambda x: x[0], reverse=True)
     if len(goal_candidates) >= 2:
@@ -72,7 +72,6 @@ def process_and_publish(frame):
             left_goal, right_goal = g1, g2
         else:
             left_goal, right_goal = g2, g1
-        last_right_goal = right_goal
         rospy.loginfo("Two best goals used → left/right updated")
     elif len(goal_candidates) == 1:
         left_goal = goal_candidates[0][1]
