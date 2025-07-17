@@ -3,6 +3,7 @@
 import rospy
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point
+from std_msgs.msg import Bool
 from blenders_msgs.msg import RobotPose, PointArray
 from cv_bridge import CvBridge
 from ultralytics import YOLO
@@ -13,6 +14,7 @@ pub_img = None
 pub_ball = None
 pub_goal = None
 pub_robot = None
+center_flag = False
 bridge = CvBridge()
 valid_pose_received = False
 
@@ -20,6 +22,10 @@ def init_pose_callback(msg):
     global valid_pose_received
     valid_pose_received = msg.valid
     rospy.loginfo(f"[Pose] valid: {valid_pose_received}")
+
+def center_callback(msg):
+    global center_flag
+    center_flag = msg.data  # Update with the latest value
 
 def process_and_publish(frame):
     global valid_pose_received, quadrant
@@ -66,18 +72,26 @@ def process_and_publish(frame):
     right_goal = Point(999, 999, 0)
 
     goal_candidates = sorted(goal_candidates, key=lambda x: x[0], reverse=True)
-    if len(goal_candidates) >= 2:
-        g1, g2 = goal_candidates[0][1], goal_candidates[1][1]
-        if g1.x < g2.x:
-            left_goal, right_goal = g1, g2
+        # === Decide what to publish to ball_center ===
+    if not valid_pose_received:
+        if len(goal_candidates) < 2:
+            if center_flag and len(goal_candidates) == 1:
+                rospy.loginfo("Pre-init: center_flag=True and 1 goal → sending that goal to /ball_center")
+                pub_ball.publish(goal_candidates[0][1])
+            else:
+                rospy.loginfo("Pre-init: <2 goals and no center override → sending default to /ball_center")
+                pub_ball.publish(Point(999, 999, 0))
         else:
-            left_goal, right_goal = g2, g1
-        rospy.loginfo("Two best goals used → left/right updated")
-    elif len(goal_candidates) == 1:
-        left_goal = goal_candidates[0][1]
-        rospy.loginfo("Only one goal seen → using as left, keeping old right")
+            if quadrant in [1, 3]:
+                rospy.loginfo("Pre-init: quadrant 1 or 3 → send LEFT goal as ball_center")
+                pub_ball.publish(left_goal)
+            elif quadrant in [2, 4]:
+                rospy.loginfo("Pre-init: quadrant 2 or 4 → send RIGHT goal as ball_center")
+                pub_ball.publish(right_goal)
     else:
-        rospy.loginfo("No goals seen → keeping old goal values")
+        rospy.loginfo("Post-init: sending actual BALL as ball_center")
+        pub_ball.publish(ball_center)
+
 
     # === Publish robot and goal center ===
     pub_robot.publish(robot_center)
@@ -114,6 +128,7 @@ def main():
 
     # Subscribers
     rospy.Subscriber(f'/robotis_{robot_id}/robot_pose/init_pose', RobotPose, init_pose_callback)
+    rospy.Subscriber(f'/robotis_{robot_id}/robot_pose/centering_goal', Bool, center_callback)
 
     # Publishers
     pub_img = rospy.Publisher(f'/robotis_{robot_id}/ImgFinal', Image, queue_size=1)
