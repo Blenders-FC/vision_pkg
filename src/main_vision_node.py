@@ -14,19 +14,26 @@ pub_goal = None
 pub_robot = None
 bridge = CvBridge()
 
+# Ball detection treshold
+ball_lost_counter = 0
+current_ball = Point(999,999,0)
+ball_lost_treshold = 5 
+
 # Load YOLOv11 TensorRT model
 model_path = "/home/blenders/catkin_ws/src/vision_pkg/models/"
 model_name = "rhoban-v6.engine"
 trt_model = YOLO(model_path + model_name)
 
 def process_and_publish(frame):
+    global ball_lost_treshold, ball_lost_counter, current_ball
+
     results = trt_model(frame)
     annotated_frame = results[0].plot()
     img_msg = bridge.cv2_to_imgmsg(annotated_frame, encoding="bgr8")
     pub_img.publish(img_msg)
 
     # Default fallback
-    ball_center = Point(999, 999, 0)
+    temp_ball = Point(999, 999, 0)
     goal_center = Point(999, 999, 0)
     robot_center = Point(999, 999, 0)
 
@@ -42,15 +49,14 @@ def process_and_publish(frame):
             xyxy = box.xyxy[0].cpu().numpy()
             x1, y1, x2, y2 = xyxy
             cx = int((x1 + x2) / 2)
-            cy = int(y2)  # bottom Y
+            cy = int((y1 + y2) / 2)  # bottom Y
             label = r.names[cls_id].lower()
 
             print("label:", label, "| conf:", conf)
 
             if "ball" in label and conf > best_ball_conf:
                 best_ball_conf = conf
-                ball_center.x = cx
-                ball_center.y = cy
+                temp_ball = Point(cx, cy, 0)
 
             elif "goal" in label and conf > best_goal_conf:
                 best_goal_conf = conf
@@ -62,8 +68,19 @@ def process_and_publish(frame):
                 robot_center.x = cx
                 robot_center.y = cy
 
+    #Flickering correction
+    if temp_ball != Point(999,999,0):
+        current_ball = temp_ball
+        ball_lost_counter = 0
+    elif (ball_lost_counter >= ball_lost_treshold):
+            ball_lost_counter += 1
+            current_ball = Point(999,999,0)
+    else:
+        ball_lost_counter += 1
+ 
+
     # Publish final positions
-    pub_ball.publish(ball_center)
+    pub_ball.publish(current_ball)
     pub_goal.publish(goal_center)
     pub_robot.publish(robot_center)
 
