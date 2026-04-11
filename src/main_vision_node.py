@@ -16,7 +16,7 @@ bridge = CvBridge()
 
 # Load YOLOv11 TensorRT model
 model_path = "/home/blenders/catkin_ws/src/vision_pkg/models/"
-model_name = "rhoban-v6.engine"
+model_name = "yolov8_center.pt"
 trt_model = YOLO(model_path + model_name)
 
 def process_and_publish(frame):
