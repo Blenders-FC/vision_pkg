@@ -16,8 +16,9 @@ bridge = CvBridge()
 
 # Load YOLOv11 TensorRT model
 model_path = "/home/blenders/catkin_ws/src/vision_pkg/models/"
-model_name = "yolov8_center.pt"
+model_name = "yolov8_center.engine"
 trt_model = YOLO(model_path + model_name)
+
 
 def process_and_publish(frame):
     results = trt_model(frame)
@@ -34,6 +35,8 @@ def process_and_publish(frame):
     best_ball_conf = 0
     best_robot_conf = 0
     best_goal_conf = 0
+
+    goal_detections = []
 
     for r in results:
         for box in r.boxes:
@@ -52,15 +55,25 @@ def process_and_publish(frame):
                 ball_center.x = cx
                 ball_center.y = cy
 
-            elif "goal" in label and conf > best_goal_conf:
-                best_goal_conf = conf
-                goal_center.x = cx
-                goal_center.y = cy
+            elif "goal" in label:
+                goal_detections.append((cx, cy, conf))
 
+                if conf > best_goal_conf:
+                    best_goal_conf = conf
+                    goal_center.x = cx
+                    goal_center.y = cy
             elif "robot" in label and conf > best_robot_conf:
                 best_robot_conf = conf
                 robot_center.x = cx
                 robot_center.y = cy
+
+    
+    if len(goal_detections) == 2:
+        avg_x = int((goal_detections[0][0] + goal_detections[1][0]) / 2)
+        avg_y = int((goal_detections[0][1] + goal_detections[1][1]) / 2)
+
+        goal_center.x = avg_x
+        goal_center.y = avg_y
 
     # Publish final positions
     pub_ball.publish(ball_center)
